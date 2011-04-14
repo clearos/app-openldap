@@ -1,13 +1,13 @@
 <?php
 
 /**
- * OpenLDAP directory driver.
+ * OpenLDAP driver.
  *
  * @category   Apps
  * @package    OpenLDAP
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2006-2011 ClearFoundation
+ * @copyright  2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/openldap/
  */
@@ -53,7 +53,14 @@ clearos_load_language('directory_manager');
 // D E P E N D E N C I E S
 ///////////////////////////////////////////////////////////////////////////////
 
-use \clearos\apps\directory_manager\Directory as Directory;
+// Factories
+//----------
+
+use \clearos\apps\directory_manager\Directory_Factory as Directory;
+use \clearos\apps\mode\Mode_Factory as Mode;
+
+clearos_load_library('directory_manager/Directory_Factory');
+clearos_load_library('mode/Mode_Factory');
 
 // Classes
 //--------
@@ -64,11 +71,10 @@ use \clearos\apps\base\Engine as Engine;
 use \clearos\apps\base\File as File;
 use \clearos\apps\base\Folder as Folder;
 use \clearos\apps\base\Shell as Shell;
-use \clearos\apps\date\NTP_Time as NTP_Time;
-use \clearos\apps\openldap\OpenLDAP as OpenLDAP;
-use \clearos\apps\openldap\Utilities as Utilities;
 //use \clearos\apps\network\Hostname as Hostname;
 use \clearos\apps\network\Network_Utils as Network_Utils;
+use \clearos\apps\openldap\OpenLDAP as OpenLDAP;
+use \clearos\apps\samba\Samba as Samba;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/Daemon');
@@ -76,23 +82,19 @@ clearos_load_library('base/Engine');
 clearos_load_library('base/File');
 clearos_load_library('base/Folder');
 clearos_load_library('base/Shell');
-clearos_load_library('date/NTP_Time');
-clearos_load_library('directory_manager/Directory');
-clearos_load_library('openldap/OpenLDAP');
-clearos_load_library('openldap/Utilities');
 // clearos_load_library('network/Hostname');
 clearos_load_library('network/Network_Utils');
+clearos_load_library('openldap/OpenLDAP');
+clearos_load_library('samba/Samba');
 
 // Exceptions
 //-----------
 
 use \clearos\apps\base\Engine_Exception as Engine_Exception;
-use \clearos\apps\base\File_No_Match_Exception as File_No_Match_Exception;
 use \clearos\apps\base\File_Not_Found_Exception as File_Not_Found_Exception;
 use \clearos\apps\base\Validation_Exception as Validation_Exception;
 
 clearos_load_library('base/Engine_Exception');
-clearos_load_library('base/File_No_Match_Exception');
 clearos_load_library('base/File_Not_Found_Exception');
 clearos_load_library('base/Validation_Exception');
 
@@ -101,28 +103,36 @@ clearos_load_library('base/Validation_Exception');
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- * ClearOS OpenLDAP directory driver.
+ * OpenLDAP driver.
  *
  * @category   Apps
  * @package    OpenLDAP
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2006-2011 ClearFoundation
+ * @copyright  2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/openldap/
  */
 
-class Directory_Driver extends Engine
+class LDAP_Driver extends Engine
 {
     ///////////////////////////////////////////////////////////////////////////////
     // C O N S T A N T S
     ///////////////////////////////////////////////////////////////////////////////
 
     const CONSTANT_BASE_DB_NUM = 3;
-    const LOG_TAG = 'directory';
+
+// FIXME: move this to the "LDAP MANAGER" class
+    // Modes
+    const MODE_MASTER = 'master';
+    const MODE_SLAVE = 'slave';
+    const MODE_STANDALONE = 'standalone';
+
+    // Policies
+    const POLICY_LAN = 'lan';
+    const POLICY_LOCALHOST = 'localhost';
 
     // Commands
-    const COMMAND_AUTHCONFIG = '/usr/sbin/authconfig';
     const COMMAND_LDAPSETUP = '/usr/sbin/ldapsetup';
     const COMMAND_LDAPSYNC = '/usr/sbin/ldapsync';
     const COMMAND_OPENSSL = '/usr/bin/openssl';
@@ -131,64 +141,28 @@ class Directory_Driver extends Engine
     const COMMAND_SLAPPASSWD = '/usr/sbin/slappasswd';
 
     // Files and paths
+    const FILE_CONFIG = '/var/clearos/openldap/config.php';
+    const FILE_DATA = '/var/clearos/openldap/provision/provision.ldif';
     const FILE_DBCONFIG = '/var/lib/ldap/DB_CONFIG';
     const FILE_DBCONFIG_ACCESSLOG = '/var/lib/ldap/accesslog/DB_CONFIG';
+    const FILE_INITIALIZED = '/var/clearos/openldap/initialized.php';
     const FILE_LDAP_CONFIG = '/etc/openldap/ldap.conf';
     const FILE_SLAPD_CONFIG = '/etc/openldap/slapd.conf';
     const FILE_SYSCONFIG = '/etc/sysconfig/ldap';
-    const FILE_DATA = '/etc/openldap/provision.ldif';
-
-    const PATH_LDAP = '/var/lib/ldap';
-
-// FIXME: Review these -- moved from OpenLDAP class
     const FILE_LDIF_BACKUP = '/etc/openldap/backup.ldif';
-    const FILE_SLAPD_CONFIG_CONFIG = '/etc/openldap/slapd.conf';
-    const PATH_LDAP_BACKUP = '/usr/share/system/modules/ldap';
-    const FILE_LDIF_NEW_DOMAIN = '/etc/openldap/provision/newdomain.ldif';
-    const FILE_LDIF_OLD_DOMAIN = '/etc/openldap/provision/olddomain.ldif';
-
-// Move to kolab
-    const PATH_KOLAB = '/etc/kolab';
-    const FILE_KOLAB_CONFIG = '/etc/kolab/kolab.conf';
-    const FILE_KOLAB_SETUP = '/etc/kolab/.kolab2_configured';
+    const FILE_LDIF_NEW_DOMAIN = '/var/clearos/openldap/provision/newdomain.ldif';
+    const FILE_LDIF_OLD_DOMAIN = '/var/clearos/openldap/provision/olddomain.ldif';
+    const PATH_LDAP = '/var/lib/ldap';
+    const PATH_LDAP_BACKUP = '/var/clearos/openldap/provision';
+    const PATH_SYNCHRONIZE = '/var/clearos/openldap/synchronize';
 
     // Internal configuration
-    const FILE_CONFIG = 'config/config.php';
-    const FILE_INITIALIZED = 'config/initialized.php';
-    const FILE_PROVISION_ACCESSLOG_DATA = 'config/provision/provision.accesslog.ldif';
-    const FILE_PROVISION_DATA = 'config/provision/provision.ldif.template';
-    const FILE_PROVISION_DBCONFIG = 'config/provision/DB_CONFIG.template';
-    const FILE_PROVISION_LDAP_CONFIG = 'config/provision/ldap.conf.template';
-    const FILE_PROVISION_SLAPD_CONFIG = 'config/provision/slapd.conf.template';
-    const FILE_PROVISION_SLAPD_CONFIG_REPLICATE = 'config/provision/slapd-replicate.conf.template';
-
-    // Containers
-    const SUFFIX_COMPUTERS = 'ou=Computers,ou=Accounts';
-    const SUFFIX_GROUPS = 'ou=Groups,ou=Accounts';
-    const SUFFIX_SERVERS = 'ou=Servers';
-    const SUFFIX_USERS = 'ou=Users,ou=Accounts';
-    const SUFFIX_PASSWORD_POLICIES = 'ou=PasswordPolicies,ou=Accounts';
-    const OU_PASSWORD_POLICIES = 'PasswordPolicies';
-    const CN_MASTER = 'cn=Master';
-
-    // Status codes for username/group/alias uniqueness
-// FIXME: might return just strings instead
-    const STATUS_ALIAS_EXISTS = 'alias';
-    const STATUS_GROUP_EXISTS = 'group';
-    const STATUS_USERNAME_EXISTS = 'user';
-    const STATUS_UNIQUE = 'unique';
-
-    // Services available in Directory
-    const SERVICE_TYPE_FTP = 'ftp';
-    const SERVICE_TYPE_EMAIL = 'email';
-    const SERVICE_TYPE_GOOGLE_APPS = 'googleapps';
-    const SERVICE_TYPE_OPENVPN = 'openvpn';
-    const SERVICE_TYPE_PPTP = 'pptp';
-    const SERVICE_TYPE_PROXY = 'proxy';
-    const SERVICE_TYPE_SAMBA = 'samba';
-    const SERVICE_TYPE_WEBCONFIG = 'webonfig';
-    const SERVICE_TYPE_WEB = 'web';
-    const SERVICE_TYPE_PBX = 'pbx';
+    const FILE_PROVISION_ACCESSLOG_DATA = 'deploy/provision/provision.accesslog.ldif';
+    const FILE_PROVISION_DATA = 'deploy/provision/provision.ldif.template';
+    const FILE_PROVISION_DBCONFIG = 'deploy/provision/DB_CONFIG.template';
+    const FILE_PROVISION_LDAP_CONFIG = 'deploy/provision/ldap.conf.template';
+    const FILE_PROVISION_SLAPD_CONFIG = 'deploy/provision/slapd.conf.template';
+    const FILE_PROVISION_SLAPD_CONFIG_REPLICATE = 'deploy/provision/slapd-replicate.conf.template';
 
     ///////////////////////////////////////////////////////////////////////////////
     // V A R I A B L E S
@@ -198,8 +172,6 @@ class Directory_Driver extends Engine
     protected $config = NULL;
     protected $modes = NULL;
 
-    protected $file_config = NULL;
-    protected $file_initialized = NULL;
     protected $file_provision_accesslog_data = NULL;
     protected $file_provision_data = NULL;
     protected $file_provision_dbconfig = NULL;
@@ -212,7 +184,7 @@ class Directory_Driver extends Engine
     ///////////////////////////////////////////////////////////////////////////////
 
     /**
-     * OpenLDAP_Driver constructor.
+     * Driver constructor.
      */
 
     public function __construct()
@@ -220,94 +192,17 @@ class Directory_Driver extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         $this->modes = array(
-            Directory::MODE_MASTER => lang('directory_master'),
-            Directory::MODE_SLAVE => lang('directory_slave'),
-            Directory::MODE_STANDALONE => lang('directory_standalone')
+            self::MODE_MASTER => lang('mode_master'),
+            self::MODE_SLAVE => lang('mode_slave'),
+            self::MODE_STANDALONE => lang('mode_standalone')
         );
 
-        $this->file_config = clearos_app_base('openldap') . '/' . self::FILE_CONFIG;
-        $this->file_initialized = clearos_app_base('openldap') . '/' . self::FILE_INITIALIZED;
         $this->file_provision_accesslog_data = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_ACCESSLOG_DATA;
         $this->file_provision_data = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_DATA;
         $this->file_provision_dbconfig = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_DBCONFIG;
         $this->file_provision_ldap_config = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_LDAP_CONFIG;
         $this->file_provision_slapd_config = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_SLAPD_CONFIG;
         $this->file_provision_slapd_config_replicate = clearos_app_base('openldap') . '/' . self::FILE_PROVISION_SLAPD_CONFIG_REPLICATE;
-    }
-
-    /**
-     * Check for overlapping usernames, groups and aliases in the directory.
-     *
-     * @param string $id username, group or alias
-     *
-     * @return string warning message if ID is not unique
-     */
-
-    public function check_uniqueness($id)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
-
-        // Check for duplicate user
-        //-------------------------
-
-        try {
-            $result = $this->ldaph->search(
-                "(&(objectclass=inetOrgPerson)(uid=$id))",
-                self::get_users_ou(),
-                array('dn')
-            );
-
-            $entry = $this->ldaph->get_first_entry($result);
-
-            if ($entry)
-                return "Username already exists."; // FIXME self::STATUS_USERNAME_EXISTS;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
-
-        // Check for duplicate alias
-        //--------------------------
-
-        try {
-            $result = $this->ldaph->Search(
-                "(&(objectclass=inetOrgPerson)(clearMailAliases=$id))",
-                self::get_users_ou(),
-                array('dn')
-            );
-
-            $entry = $this->ldaph->get_first_entry($result);
-
-            if ($entry)
-                return "Mail alias already exists."; // FIXME self::STATUS_ALIAS_EXISTS;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
-
-        // Check for duplicate group
-        //--------------------------
-    
-        // The "displayName" is used in Samba group mapping.  In other words,
-        // the "displayName" is what is used by Windows networking (not the cn).
-
-        try {
-            $result = $this->ldaph->Search(
-                "(&(objectclass=posixGroup)(|(cn=$id)(displayName=$id)))",
-                self::get_groups_ou(),
-                array('dn')
-            );
-
-            $entry = $this->ldaph->get_first_entry($result);
-
-            if ($entry)
-                return "Group already exists."; // self::STATUS_GROUP_EXISTS;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
-
-        // FIXME: Flexshares?  How do we deal with this in master/replica mode?
     }
 
     /**
@@ -320,7 +215,7 @@ class Directory_Driver extends Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function export($ldif = ldap::FILE_LDIF_BACKUP, $dbnum = self::CONSTANT_BASE_DB_NUM)
+    public function export($ldif = self::FILE_LDIF_BACKUP, $dbnum = self::CONSTANT_BASE_DB_NUM)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -331,7 +226,7 @@ class Directory_Driver extends Engine
                 $export->delete();
 
             if ($this->ldaph === NULL)
-                $this->ldaph = Utilities::get_ldap_handle();
+                $this->ldaph = $this->get_ldap_handle();
 
             $was_running = $this->ldaph->get_running_state();
 
@@ -346,6 +241,32 @@ class Directory_Driver extends Engine
         } catch (Exception $e) {
             throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
         }
+    }
+
+    /**
+     * Generates a random password.
+     *
+     * @return string random password
+     * @throws Engine_Exception
+     */
+
+    public function generate_password()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        try {
+            $shell = new Shell();
+            $retval = $shell->execute(self::COMMAND_OPENSSL, 'rand -base64 12', FALSE);
+            $output = $shell->get_first_output_line();
+
+            // openssl can return with exit 0 on error, 
+            if (($retval != 0) || preg_match('/\s+/', $output))
+                throw new Engine_Exception($retval . " " . $output);
+        } catch (Exception $e) {
+            throw new Engine_Exception(clearos_exception_message($e));
+        }
+
+        return $output;
     }
 
     /** 
@@ -363,7 +284,7 @@ class Directory_Driver extends Engine
             return $this->config['base_dn'];
 
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
+            $this->ldaph = $this->get_ldap_handle();
 
         $base_dn = $this->ldaph->get_base_dn();
 
@@ -391,115 +312,32 @@ class Directory_Driver extends Engine
         return $domain;
     }
 
-    /** 
-     * Returns the OU container for computers.
-     *
-     * @return string OU container for computers.
-     * @throws Engine_Exception
-     */
-
-    public function get_computers_ou()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return self::SUFFIX_COMPUTERS . ',' . $this->get_base_dn();
-    }
-
-    /** 
-     * Returns the OU container for groups.
-     *
-     * @return string OU container for groups
-     * @throws Engine_Exception
-     */
-
-    public function get_groups_ou()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return self::SUFFIX_GROUPS . ',' . $this->get_base_dn();
-    }
-
     /**
-     * Returns list of directory extensions.
+     * Creates an LDAP connection handle.
      *
-     * @return array list of installed extensions
+     * Many libraries that use OpenLDAP need to:
+     *
+     * - grab LDAP credentials for connecting to the server
+     * - connect to LDAP
+     * - perform a bunch of LDAP acctions (search, read, etc)
+     *
+     * This method provides a common method for doing the firt two steps.
+     *
+     * @return LDAP handle
      * @throws Engine_Exception
      */
 
-    public function get_installed_extensions()
+    public function get_ldap_handle()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        // FIXME: extension auto-load
-        if (file_exists("/etc/system/initialized/sambalocal"))
-            $services[] = self::SERVICE_TYPE_SAMBA;
+        // FIXME: add security context
+        $file = new Configuration_File(self::FILE_CONFIG, 'split', '=', 2);
+        $config = $file->load();
 
-        if (file_exists(COMMON_CORE_DIR . "/api/Cyrus.class.php"))
-            $services[] = self::SERVICE_TYPE_EMAIL;
+        $ldaph = new OpenLDAP($config['base_dn'], $config['bind_dn'], $config['bind_pw']);
 
-        if (file_exists(COMMON_CORE_DIR . "/api/GoogleApps.class.php"))
-            $services[] = self::SERVICE_TYPE_GOOGLE_APPS;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/Pptpd.class.php"))
-            $services[] = self::SERVICE_TYPE_PPTP;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/OpenVpn.class.php"))
-            $services[] = self::SERVICE_TYPE_OPENVPN;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/Squid.class.php"))
-            $services[] = self::SERVICE_TYPE_PROXY;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/Proftpd.class.php"))
-            $services[] = self::SERVICE_TYPE_FTP;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/Httpd.class.php"))
-            $services[] = self::SERVICE_TYPE_WEB;
-
-        if (file_exists(COMMON_CORE_DIR . "/iplex/Users.class.php"))
-            $services[] = self::SERVICE_TYPE_PBX;
-
-        return $services;
-    }
-
-    /**
-     * Returns list of services managed in Directory.
-     *
-     * @return array list of services
-     * @throws Engine_Exception
-     */
-
-    public function get_installed_plugins()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        // Standalone and replicates only need to show installed services
-        //---------------------------------------------------------------
-
-        $mode = $this->get_mode();
-
-        if (($mode === Directory::MODE_STANDALONE) || ($mode === Directory::MODE_SLAVE))
-            return $this->GetInstalledServices();
-
-        // Master nodes should show all services
-        //--------------------------------------
-
-        $services = array();
-
-        // TODO: Allow user to fine tune which services should appear
-        // TODO: For now, Samba has to be initialized first...
-
-        if (file_exists("/etc/system/initialized/sambalocal"))
-            $services[] = self::SERVICE_TYPE_SAMBA;
-
-        $services[] = self::SERVICE_TYPE_EMAIL;
-        $services[] = self::SERVICE_TYPE_GOOGLE_APPS;
-        $services[] = self::SERVICE_TYPE_PPTP;
-        $services[] = self::SERVICE_TYPE_OPENVPN;
-        $services[] = self::SERVICE_TYPE_PROXY;
-        $services[] = self::SERVICE_TYPE_FTP;
-        $services[] = self::SERVICE_TYPE_WEB;
-
-        return $services;
+        return $ldaph;
     }
 
     /**
@@ -520,9 +358,9 @@ class Directory_Driver extends Engine
      * Returns the mode of directory.
      *
      * The return values are:
-     * - Directory::MODE_STANDALONE
-     * - Directory::MODE_MASTER
-     * - Directory::MODE_SLAVE
+     * - self::MODE_STANDALONE
+     * - self::MODE_MASTER
+     * - self::MODE_SLAVE
      *
      * @return string mode of the directory
      * @throws Engine_Exception
@@ -533,7 +371,7 @@ class Directory_Driver extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         try {
-            $file = new Configuration_File($this->file_config);
+            $file = new Configuration_File(self::FILE_CONFIG);
             $config = $file->load();
         } catch (File_Not_Found_Exception $e) {
             // Not fatal
@@ -542,104 +380,38 @@ class Directory_Driver extends Engine
         }
         
         if (isset($config['mode'])) {
-            if ($config['mode'] === Directory::MODE_MASTER)
-                $mode = Directory::MODE_MASTER;
-            else if ($config['mode'] === Directory::MODE_SLAVE)
-                $mode = Directory::MODE_SLAVE;
-            else if ($config['mode'] === Directory::MODE_STANDALONE)
-                $mode = Directory::MODE_STANDALONE;
+            if ($config['mode'] === self::MODE_MASTER)
+                $mode = self::MODE_MASTER;
+            else if ($config['mode'] === self::MODE_SLAVE)
+                $mode = self::MODE_SLAVE;
+            else if ($config['mode'] === self::MODE_STANDALONE)
+                $mode = self::MODE_STANDALONE;
             else 
-                $mode = Directory::MODE_STANDALONE;
+                $mode = self::MODE_STANDALONE;
         } else {
-            $mode = Directory::MODE_STANDALONE;
+            $mode = self::MODE_STANDALONE;
         }
 
         return $mode;
     }
 
-    /** 
-     * Returns the OU for password policies.
-     *
-     * @return string OU for password policies
-     * @throws Engine_Exception
-     */
-
-    public function get_password_policies_ou()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return self::SUFFIX_PASSWORD_POLICIES . ',' . $this->get_base_dn();
-    }
-
-    /** 
-     * Returns security policy.
-     * 
-     * @return integer security policy constant
-     * @throws Engine_Exception
-     * @see set_security_policy
-     */
-
-    public function get_security_policy()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new Configuration_File(self::FILE_SYSCONFIG);
-
-        try {
-            $sysconfig = $file->load();
-
-            if (empty($sysconfig['BIND_POLICY']))
-                return Directory::POLICY_LOCALHOST;
-            else if ($sysconfig['BIND_POLICY'] == Directory::POLICY_LAN)
-                return Directory::POLICY_LAN;
-            else
-                return Directory::POLICY_LOCALHOST;
-
-        } catch (File_Not_Found_Exception $e) {
-            return Directory::POLICY_LOCALHOST;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
-    }
-
-    /** 
-     * Returns the OU for servers.
-     *
-     * @return string OU for servers.
-     * @throws Engine_Exception
-     */
-
-    // FIXME: might remove this
-    public function get_servers_ou()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return self::SUFFIX_SERVERS . ',' . $this->get_base_dn();
-    }
-
-    /** 
-     * Returns the OU for users.
-     *
-     * @return string OU for users.
-     * @throws Engine_Exception
-     */
-
-    public function get_users_ou()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return self::SUFFIX_USERS . ',' . $this->get_base_dn();
-    }
-
     /**
-     * Imports backup LDAP database from LDIF.
+     * Returns a list of available modes.
      *
-     * @param boolean $background runs import in background if TRUE
-     *
-     * @return boolean TRUE if import file exists
+     * @return array list of modes
+     * @throws Engine_Exception
      */
 
-    public function import($background)
+    public function get_modes()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        return $this->modes;
+    }
+
+// FIXME
+// add a "run_import" for background mode
+    public function import()
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -652,18 +424,17 @@ class Directory_Driver extends Engine
             throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
         }
 
-        $this->_import_ldif(self::FILE_LDIF_BACKUP, $background);
+        $this->_import_ldif(self::FILE_LDIF_BACKUP);
 
         return TRUE;
     }
 
     /**
-     * Initializes the master LDAP database.
+     * Initializes the LDAP database in master mode.
      *
-     * @param string  $mode LDAP server mode
-     * @param string  $domain domain name
-     * @param string  $password bind DN password
-     * @param boolean $background runs import in background if TRUE
+     * @param string $mode LDAP server mode
+     * @param string $domain domain name
+     * @param string $password bind DN password
      * @param boolean $start starts LDAP after initialization
      * @param boolean $force forces initialization even if LDAP server already has data
      *
@@ -671,86 +442,55 @@ class Directory_Driver extends Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function initialize($mode, $domain, $password = NULL, $background = FALSE, $start = TRUE, $force = FALSE, $master_hostname = NULL)
+    public function initialize_master($domain, $password = NULL, $force = FALSE, $start = TRUE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        // TODO: validate
-        // TODO: mode
-        // TODO: fix the method call -- too many parameters
-
-        // Bail if LDAP is already initialized (and not a re-initialize)
-        //--------------------------------------------------------------
-
-        if (! $force) {
-            $file = new File($this->file_initialized);
-            if ($file->exists())
-                return;
-        }
-
-        // Determine our hostname and generate an LDAP password (if required)
-        //--------------------------------------------------------------
-
-        // FIXME: hostname class is busted
-        /*
-        $hostnameinfo = new Hostname();
-        $hostname = $hostnameinfo->Get();
-        */
-        $hostname = 'test.lan';
+        $options['force'] = $force;
+        $options['start'] = $start;
 
         if (empty($password))
-            $password = Utilities::generate_password();
+            $password = $this->generate_password();
 
-        // Run our initialization subroutines
-        //-----------------------------------
+        $this->_initialize(self::MODE_MASTER, $domain, $password, $options);
+    }
 
-        if ($mode == Directory::MODE_SLAVE) {
-            $this->_initialize_slave_configuration($domain, $password, $hostname, $master_hostname);
-        } else {
-            $this->_initialize_master_configuration($domain, $password, $hostname);
-            $this->_import_ldif(self::FILE_DATA, $background);
-        }
+    /**
+     * Initializes the LDAP database in slave mode.
+     *
+     * @return void
+     * @throws Engine_Exception, Validation_Exception
+     */
 
-        $this->_initialize_authconfig();
-        $this->_remove_overlaps();
+    public function initialize_slave($domain, $password, $master_hostname, $force = FALSE, $start = TRUE)
+    {
+        clearos_profile(__METHOD__, __LINE__);
 
-        // The critical part is done, set flag to indicate LDAP initialization
-        //--------------------------------------------------------------------
+        $options['force'] = $force;
+        $options['start'] = $start;
+        $options['master_hostname'] = $master_hostname;
 
-        $file = new File($this->file_initialized);
+        $this->_initialize(self::MODE_SLAVE, $domain, $password, $options);
+    }
 
-        if (! $file->exists())
-            $file->create("root", "root", "0644");
+    /**
+     * Initializes the LDAP database in standalone mode.
+     *
+     * @return void
+     * @throws Engine_Exception, Validation_Exception
+     */
 
-        // Startup LDAP and set onboot flag
-        //---------------------------------
+    public function initialize_standalone($domain, $password = NULL, $force = FALSE, $start = TRUE)
+    {
+        clearos_profile(__METHOD__, __LINE__);
 
-        try {
-            if ($this->ldaph === NULL)
-                $this->ldaph = Utilities::get_ldap_handle();
+        $options['force'] = $force;
+        $options['start'] = $start;
 
-            $this->ldaph->set_boot_state(TRUE);
+        if (empty($password))
+            $password = $this->generate_password();
 
-            /*
-            FIXME
-            $ldapsync = new Daemon("ldapsync");
-            $ldapsync->set_boot_state(TRUE);
-            */
-
-            if ($start) {
-                $this->ldaph->restart();
-                // FIXME $ldapsync->restart();
-            }
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
-
-        // Tell LDAP-related apps to synchronize with the latest LDAP
-        //-----------------------------------------------------------
-
-        /* FIXME
-        $this->_synchronize($background);
-        */
+        $this->_initialize(self::MODE_STANDALONE, $domain, $password, $options);
     }
 
     /**
@@ -764,7 +504,7 @@ class Directory_Driver extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
+            $this->ldaph = $this->get_ldap_handle();
 
         $available = $this->ldaph->is_available();
 
@@ -782,7 +522,7 @@ class Directory_Driver extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $file = new File($this->file_initialized);
+        $file = new File(self::FILE_INITIALIZED);
 
         if ($file->exists())
             return TRUE;
@@ -807,17 +547,13 @@ class Directory_Driver extends Engine
         if ($this->IsInitialized())
             return;
 
-        try {
-            $options['stdin'] = TRUE;
-            $options['background'] = TRUE;
+        $options['stdin'] = TRUE;
+        $options['background'] = TRUE;
 
-            $password = Utilities::generate_password();
+        $password = $this->generate_password();
 
-            $shell = new Shell();
-            $shell->Execute(self::COMMAND_LDAPSETUP, "-r $mode -d $domain -p $password", TRUE, $options);
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        $shell = new Shell();
+        $shell->Execute(self::COMMAND_LDAPSETUP, "-r $mode -d $domain -p $password", TRUE, $options);
     }
 
     /**
@@ -851,7 +587,7 @@ class Directory_Driver extends Engine
         }
 
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
+            $this->ldaph = $this->get_ldap_handle();
 
         $was_running = FALSE;
 
@@ -884,7 +620,7 @@ class Directory_Driver extends Engine
             // Load LDAP configuration
             //------------------------
 
-            $ldapconfig = new File(self::FILE_SLAPD_CONFIG_CONFIG);
+            $ldapconfig = new File(self::FILE_SLAPD_CONFIG);
             $ldaplines = $ldapconfig->GetContentsAsArray();
 
             // Load LDAP information
@@ -986,7 +722,7 @@ class Directory_Driver extends Engine
             // LDAP configuration
             //--------------------
 
-            $newldap = new File(self::FILE_SLAPD_CONFIG_CONFIG, TRUE);
+            $newldap = new File(self::FILE_SLAPD_CONFIG, TRUE);
 
             if ($newldap->Exists())
                 $newldap->Delete();
@@ -1013,8 +749,6 @@ class Directory_Driver extends Engine
 
             // Perform Authconfig initialization in case LDAP has been manually initialized
             //-----------------------------------------------------------------------------
-
-            $this->_initialize_authconfig();
 
         } catch (Exception $e) {
             throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
@@ -1071,6 +805,24 @@ class Directory_Driver extends Engine
         }
     }
 
+    /**
+     * Sends a synchronization signal to LDAP aware apps.
+     *
+     * @return void
+     */
+
+    public function synchronize()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $this->_synchronize_files();
+
+// FIXME: do we still need a background?
+//        $options['background'] = $background;
+        $shell = new Shell();
+        // FIXME
+        // $shell->Execute(self::COMMAND_LDAPSYNC, "full", TRUE, $options);
+    }
     ///////////////////////////////////////////////////////////////////////////////
     // V A L I D A T I O N
     ///////////////////////////////////////////////////////////////////////////////
@@ -1121,10 +873,9 @@ class Directory_Driver extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!empty($password) && (!preg_match('/[\|;]/', $password)))
-            return TRUE;
-        else
-            return FALSE;
+        // FIXME
+        if (empty($password))
+            return lang('base_password_is_invalid');
     }
 
     /**
@@ -1139,7 +890,7 @@ class Directory_Driver extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (($policy !== Directory::POLICY_LOCALHOST) && ($policy !== Directory::POLICY_LAN))
+        if (($policy !== self::POLICY_LOCALHOST) && ($policy !== self::POLICY_LAN))
             return lang('openldap_security_policy_is_invalid');
     }
 
@@ -1148,21 +899,74 @@ class Directory_Driver extends Engine
     ///////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Initializes authconfig.
+     * Common initialization routine for the LDAP modes.
      *
-     * This method will update the nsswitch.conf and pam configuration.
+     * @param string $mode LDAP server mode
+     * @param string $domain domain name
+     * @param string $password bind DN password
+     * @param options options array depending on mode
+     *
+     * @return void
+     * @throws Engine_Exception, Validation_Exception
      */
 
-    protected function _initialize_authconfig()
+    protected function _initialize($mode, $domain, $password, $options)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        try {
-            $shell = new Shell();
-            $shell->execute(self::COMMAND_AUTHCONFIG, '--enableshadow --enablemd5 --enableldap --enableldapauth --update', TRUE);
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        $force = isset($options['force']) ? $options['force'] : FALSE;
+        $start = isset($options['start']) ? $options['start'] : TRUE;
+        $master_hostname = isset($options['master_hostname']) ? $options['master_hostname'] : '';
+
+        // Bail if LDAP is already initialized (and not a re-initialize)
+        //--------------------------------------------------------------
+
+        if ($this->is_initialized() && (!$force))
+            return;
+
+        // KLUDGE: shutdown Samba or it will try to write information to LDAP
+        //-------------------------------------------------------------------
+
+        $samba = new Samba();
+
+        if ($samba->is_installed())
+            $samba->set_running_state(FALSE);
+
+        // Determine our hostname and generate an LDAP password (if required)
+        //-------------------------------------------------------------------
+
+        // FIXME: hostname class is busted
+        /*
+        $hostnameinfo = new Hostname();
+        $hostname = $hostnameinfo->Get();
+        */
+        $hostname = 'test.lan';
+
+        // Generate the configuration files
+        //---------------------------------
+
+        $this->_initialize_configuration($mode, $domain, $password, $hostname, $master_hostname);
+
+        // Set sane security policy
+        //-------------------------
+
+        if ($mode === self::MODE_SLAVE)
+            $this->set_security_policy(self::POLICY_LAN);
+        else
+            $this->set_security_policy(self::POLICY_LOCALHOST);
+       
+
+        // Import the base LDIF data
+        //--------------------------
+
+        $this->_import_ldif(self::FILE_DATA);
+
+        // Do some cleanup tasks
+        //----------------------
+
+        $this->_set_initialized();
+        $this->_set_startup($start);
+        $this->_synchronize();
     }
 
     /**
@@ -1175,7 +979,7 @@ class Directory_Driver extends Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    protected function _initialize_master_configuration($domain, $password, $hostname)
+    protected function _initialize_configuration($mode, $domain, $password, $hostname, $master_hostname = '')
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -1201,13 +1005,13 @@ class Directory_Driver extends Engine
         // Create internal configuration file
         //-----------------------------------
 
-        $config = "mode = " . Directory::MODE_MASTER . "\n";
+        $config = "mode = " . $mode . "\n";
         $config .= "base_dn = $base_dn\n";
         $config .= "bind_dn = $bind_dn\n";
         $config .= "bind_pw = $bind_pw\n";
         $config .= "bind_pw_hash = $bind_pw_hash\n";
 
-        $file = new File($this->file_config);
+        $file = new File(self::FILE_CONFIG);
 
         if ($file->exists())
             $file->delete();
@@ -1218,13 +1022,20 @@ class Directory_Driver extends Engine
         // Create slapd.conf configuration
         //--------------------------------
 
-        $file = new File($this->file_provision_slapd_config);
+        if ($mode === self::MODE_SLAVE)
+            $slapd = $this->file_provision_slapd_config_replicate;
+        else
+            $slapd = $this->file_provision_slapd_config;
+
+        $file = new File($slapd);
 
         $contents = $file->get_contents();
         $contents = preg_replace("/\@\@\@base_dn\@\@\@/", $base_dn, $contents);
         $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
+        $contents = preg_replace("/\@\@\@bind_pw\@\@\@/", $bind_pw, $contents);
         $contents = preg_replace("/\@\@\@bind_pw_hash\@\@\@/", $bind_pw_hash, $contents);
         $contents = preg_replace("/\@\@\@domain\@\@\@/", $domain, $contents);
+        $contents = preg_replace("/\@\@\@master_hostname\@\@\@/", $master_hostname, $contents);
 
         $newfile = new File(self::FILE_SLAPD_CONFIG);
 
@@ -1241,7 +1052,6 @@ class Directory_Driver extends Engine
 
         $contents = $file->get_contents();
         $contents = preg_replace("/\@\@\@base_dn\@\@\@/", $base_dn, $contents);
-        $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
 
         $newfile = new File(self::FILE_LDAP_CONFIG);
 
@@ -1250,6 +1060,12 @@ class Directory_Driver extends Engine
 
         $newfile->create('root', 'root', '0644');
         $newfile->add_lines("$contents\n");
+
+        // Slave mode... bug out, we're done
+        //----------------------------------
+
+        if ($mode === self::MODE_SLAVE)
+            return;
 
         // Create DB_CONFIG configuration
         //-------------------------------
@@ -1301,122 +1117,9 @@ class Directory_Driver extends Engine
     }
 
     /**
-     * Initializes LDAP replicate configuration.
-     *
-     * @param password $password LDAP master password
-     * @param hostname $hostname hostname and IP of LDAP master
-     * @param string $domain domain name
-     * @throws Engine_Exception, Validation_Exception
-     */
-
-    protected function _initialize_slave_configuration($domain, $password, $hostname, $master_hostname)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        // TODO: validate
-        // TODO: merge with _initialize_master_configuration
-
-        $base_dn = preg_replace("/\./", ",dc=", $domain);
-        $base_dn = "dc=$base_dn";
-
-        $base_dn_rdn = preg_replace("/,.*/", "", $base_dn);
-        $base_dn_rdn = preg_replace("/dc=/", "", $base_dn_rdn);
-
-        $bind_pw = $password;
-
-        // Load up the required kolab.conf values
-        //---------------------------------------
-
-        $shell = new Shell();
-
-        $shell->Execute(self::COMMAND_OPENSSL, "rand -base64 30");
-        $php_pw = $shell->get_first_output_line();
-        $shell->Execute(self::COMMAND_SLAPPASSWD, "-s $php_pw");
-        $php_pw_hash = $shell->get_first_output_line();
-
-        $shell->Execute(self::COMMAND_OPENSSL, "rand -base64 30");
-        $calendar_pw = $shell->get_first_output_line();
-        $shell->Execute(self::COMMAND_SLAPPASSWD, "-s $calendar_pw");
-        $calendar_pw_hash = $shell->get_first_output_line();
-
-        $shell->Execute(self::COMMAND_SLAPPASSWD, "-s $bind_pw");
-        $bind_pw_hash = $shell->get_first_output_line();
-
-        $bind_dn = "cn=manager,ou=Internal,$base_dn";
-
-        $config = "fqdnhostname : $hostname\n";
-        $config .= "is_master : FALSE\n";
-        $config .= "base_dn : $base_dn\n";
-        $config .= "bind_dn : $bind_dn\n";
-        $config .= "bind_pw : $bind_pw\n";
-        $config .= "bind_pw_hash : $bind_pw_hash\n";
-        $config .= "ldap_uri : ldap://127.0.0.1:389\n";
-        $config .= "ldap_master_uri : ldap://127.0.0.1:389\n";
-        $config .= "php_dn : cn=nobody,ou=Internal,$base_dn\n";
-        $config .= "php_pw : $php_pw\n";
-        $config .= "calendar_dn : cn=calendar,ou=Internal,$base_dn\n";
-        $config .= "calendar_pw : $calendar_pw\n";
-
-        // Kolab configuration file
-        //--------------------------
-
-        $folder = new Folder(self::PATH_KOLAB);
-
-        if (! $folder->Exists())
-            $folder->Create("root", "root", "0755");
-
-        $file = new File(self::FILE_KOLAB_CONFIG);
-
-        if ($file->exists())
-            $file->Delete();
-
-        $file->create("root", "root", "0600");
-        $file->add_lines($config);
-
-        // slapd.conf configuration
-        //--------------------------
-
-        $file = new File($this->file_provision_slapd_config_replicate);
-
-        $contents = $file->GetContents();
-        $contents = preg_replace("/\@\@\@base_dn\@\@\@/", $base_dn, $contents);
-        $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
-        $contents = preg_replace("/\@\@\@bind_pw\@\@\@/", $bind_pw, $contents);
-        $contents = preg_replace("/\@\@\@bind_pw_hash\@\@\@/", $bind_pw_hash, $contents);
-        $contents = preg_replace("/\@\@\@domain\@\@\@/", $domain, $contents);
-        $contents = preg_replace("/\@\@\@master_hostname\@\@\@/", $master_hostname, $contents);
-
-        $newfile = new File(self::FILE_SLAPD_CONFIG);
-
-        if ($newfile->exists())
-            $newfile->Delete();
-
-        $newfile->create("root", "ldap", "0640");
-        $newfile->add_lines("$contents\n");
-
-        // ldap.conf configuration
-        //------------------------
-
-        $file = new File($this->file_provision_ldap_config );
-
-        $contents = $file->GetContents();
-        $contents = preg_replace("/\@\@\@base_dn\@\@\@/", $base_dn, $contents);
-        $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
-
-        $newfile = new File(self::FILE_LDAP_CONFIG);
-
-        if ($newfile->exists())
-            $newfile->Delete();
-
-        $newfile->create("root", "root", "0644");
-        $newfile->add_lines("$contents\n");
-    }
-
-    /**
      * Imports an LDIF file.
      *
      * @param string $ldif LDIF file
-     * @param boolean $background runs import in background if TRUE
      * @throws Engine_Exception, Validation_Exception
      */
 
@@ -1425,10 +1128,7 @@ class Directory_Driver extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
-
-        // FIXME
-        // Logger::Syslog(self::LOG_TAG, "preparing LDAP import");
+            $this->ldaph = $this->get_ldap_handle();
 
         // Shutdown LDAP if running
         //-------------------------
@@ -1436,8 +1136,6 @@ class Directory_Driver extends Engine
         $was_running = $this->ldaph->get_running_state();
 
         if ($was_running) {
-            // FIXME
-            // Logger::Syslog(self::LOG_TAG, "shutting down LDAP server");
             $this->ldaph->set_running_state(FALSE);
         }
 
@@ -1466,8 +1164,6 @@ FIXME: re-enable backup
         // Import new database
         //--------------------
 
-        // FIXME
-        // Logger::Syslog(self::LOG_TAG, "loading data into LDAP server");
         $shell = new Shell();
         $shell->execute(self::COMMAND_SLAPADD, '-n2 -l ' . $this->file_provision_accesslog_data, TRUE);
         $shell->execute(self::COMMAND_SLAPADD, '-n3 -l ' . $ldif, TRUE);
@@ -1488,47 +1184,139 @@ FIXME: re-enable backup
         $folder->chown("ldap", "ldap", TRUE);
 
         if ($was_running) {
-            // FIXME
-            // Logger::Syslog(self::LOG_TAG, "restarting LDAP server");
             $this->ldaph->set_running_state(TRUE);
         }
     }
 
     /**
-     * Removes overlapping groups and users found in Posix.
+     * Sets initialized flag
      *
-     * Some default users/groups found in the Posix system overlap with LDAP
-     * entries.  For example, the group "users" is often listed in /etc/group.
-     * Since a Windows Network considers the "Users" group in a special way,
-     * it is best to not have it floating around.
-     *
-     * @return void
-     * @throws Engine_Exception
      */
-
-    protected function _remove_overlaps()
+    protected function _set_initialized()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $file = new File("/etc/group");
-        $file->replace_lines("/^users:/", "");
-        $file->replace_lines("/^domain_users:/", "");
+        $file = new File(self::FILE_INITIALIZED);
+
+        if (! $file->exists())
+            $file->create("root", "root", "0644");
     }
 
     /**
-     * Restarts the relevant daemons in a sane order.
+     * Sets startup policy
      *
-     * @param boolean $background runs method in background if TRUE
-     *
-     * @return void
      */
 
-    protected function _synchronize($background = TRUE)
+    protected function _set_startup($start)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $options['background'] = $background;
-        $shell = new Shell();
-        $shell->Execute(self::COMMAND_LDAPSYNC, "full", TRUE, $options);
+        if ($this->ldaph === NULL)
+            $this->ldaph = $this->get_ldap_handle();
+
+        $this->ldaph->set_boot_state(TRUE);
+
+        /*
+        FIXME
+        $ldapsync = new Daemon("ldapsync");
+        $ldapsync->set_boot_state(TRUE);
+        */
+
+        if ($start) {
+            $this->ldaph->restart();
+            // FIXME $ldapsync->restart();
+        }
+    }
+
+    /**
+     * Synchronizes template files.
+     *
+     * @return void
+     * @throws Engine_Exception, Validation_Exception
+     */
+    
+    protected function _synchronize_files()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Load directory configuration settings
+        //--------------------------------------
+
+        $config_file = new File(self::FILE_CONFIG);
+
+        $lines = $config_file->get_contents_as_array();
+
+        $base_dn = '';
+        $bind_dn = '';
+        $bind_pw = '';
+        $bind_pw_hash = '';
+
+        foreach ($lines as $line) {
+            if (preg_match('/^base_dn\s*=/', $line))
+                $base_dn = preg_replace('/^base_dn\s*=\s*/', '', $line);
+            if (preg_match('/^bind_dn\s*=/', $line))
+                $bind_dn = preg_replace('/^bind_dn\s*=\s*/', '', $line);
+            if (preg_match('/^bind_pw\s*=/', $line))
+                $bind_pw = preg_replace('/^bind_pw\s*=\s*/', '', $line);
+            if (preg_match('/^bind_pw_hash\s*=/', $line))
+                $bind_pw_hash = preg_replace('/^bind_pw_hash\s*=\s*/', '', $line);
+        }
+
+        // Synchronize all the configs 
+        //----------------------------
+
+        $folder = new Folder(self::PATH_SYNCHRONIZE);
+
+        $sync_files = $folder->get_listing();
+
+        foreach ($sync_files as $sync_file) {
+
+            // Pull out metadata from sync files
+            //----------------------------------
+
+            $contents = '';
+            $target = '';
+            $owner = '';
+            $group = '';
+            $permissions = '';
+            $warning = "Please do not edit - this file is automatically generated.\n\n";
+
+            $file = new File(self::PATH_SYNCHRONIZE . '/' . $sync_file);
+            $sync_contents = $file->get_contents_as_array();
+
+            foreach ($sync_contents as $line) {
+                if (preg_match('/CLEAROS_DIRECTORY_TARGET=/', $line))
+                    $target = preg_replace('/.*CLEAROS_DIRECTORY_TARGET=/', '', $line);
+                else if (preg_match('/CLEAROS_DIRECTORY_PERMISSIONS=/', $line))
+                    $permissions = preg_replace('/.*CLEAROS_DIRECTORY_PERMISSIONS=/', '', $line);
+                else if (preg_match('/CLEAROS_DIRECTORY_OWNER=/', $line))
+                    $owner = preg_replace('/.*CLEAROS_DIRECTORY_OWNER=/', '', $line);
+                else if (preg_match('/CLEAROS_DIRECTORY_GROUP=/', $line))
+                    $group = preg_replace('/.*CLEAROS_DIRECTORY_GROUP=/', '', $line);
+                else if (preg_match('/CLEAROS_DIRECTORY_WARNING_MESSAGE/', $line))
+                    $contents .= preg_replace('/CLEAROS_DIRECTORY_WARNING_MESSAGE/', $warning, $line);
+                else
+                    $contents .= $line . "\n";
+            }
+
+            // Perform search replace on variables
+            //------------------------------------
+
+            $contents = preg_replace("/\@\@\@base_dn\@\@\@/", $base_dn, $contents);
+            $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
+            $contents = preg_replace("/\@\@\@bind_pw\@\@\@/", $bind_pw, $contents);
+            $contents = preg_replace("/\@\@\@bind_pw_hash\@\@\@/", $bind_pw_hash, $contents);
+
+            // Write out file
+            //---------------
+
+            $target = new File($target);
+
+            if ($target->exists())
+                $target->delete();
+
+            $target->create($owner, $group, $permissions);
+            $target->add_lines($contents);
+        }
     }
 }
