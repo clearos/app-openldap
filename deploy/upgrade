@@ -14,3 +14,29 @@ if [ -z "$CHECK" ]; then
     logger -p local6.notice -t installer "app-openldap-core - updating LDAP sysconfig"
     cp /usr/clearos/apps/openldap/deploy/ldap.sysconfig /etc/sysconfig/ldap
 fi
+
+# Grab bootstrap certificates from Certificate Manager
+#-----------------------------------------------------
+
+#FIXME
+exit 0
+KEY_SOURCE=/etc/pki/CA/bootstrap.key
+KEY=/etc/openldap/cacerts/key.pem
+
+if [ ! -s "$KEY" ]; then
+    logger -p local6.notice -t installer "app-openldap-core - prepping server key"
+    cp $KEY_SOURCE $KEY
+    chown root.lp $KEY
+    chmod 640 $KEY
+fi
+
+CRT_SOURCE=/etc/pki/CA/bootstrap.crt
+CRT=/etc/openldap/cacerts/cert.pem
+
+if [ ! -s "$CRT" ]; then
+    logger -p local6.notice -t installer "app-openldap-core - prepping server certificate"
+    cp $CRT_SOURCE $CRT
+    chown root.lp $CRT
+    chmod 640 $CRT
+fi
+

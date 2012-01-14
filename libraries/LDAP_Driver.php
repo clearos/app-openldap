@@ -132,6 +132,7 @@ class LDAP_Driver extends LDAP_Engine
 
     const CONSTANT_BASE_DB_NUM = 3;
     const CONSTANT_BIND_DN_PREFIX = 'cn=manager,ou=Internal';
+    const DEFAULT_DOMAIN = 'system.lan'; // TODO: hard coded in places, clean up
 
     // Policies
     const POLICY_LAN = 'lan';
@@ -447,9 +448,9 @@ class LDAP_Driver extends LDAP_Engine
         $modes[self::MODE_STANDALONE] = lang('ldap_standalone');
 
         foreach ($system_modes as $mode => $mode_text) {
-            if (($mode === Mode_Engine::MODE_SIMPLE_MASTER) || ($mode === Mode_Engine::MODE_MASTER))
+            if ($mode === Mode_Engine::MODE_MASTER)
                 $modes[self::MODE_MASTER] = lang('ldap_master');
-            else if ( ($mode === Mode_Engine::MODE_SIMPLE_SLAVE) || ($mode === Mode_Engine::MODE_SLAVE))
+            else if ($mode === Mode_Engine::MODE_SLAVE)
                 $modes[self::MODE_SLAVE] = lang('ldap_slave');
         }
 
@@ -589,7 +590,7 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function initialize_master($domain, $password = NULL, $force = FALSE, $start = TRUE)
+    public function initialize_master($domain = NULL, $password = NULL, $force = FALSE, $start = TRUE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -598,6 +599,9 @@ class LDAP_Driver extends LDAP_Engine
 
         if (empty($password))
             $password =  LDAP_Utilities::generate_password();
+
+        if (empty($domain))
+            $domain = self::DEFAULT_DOMAIN;
 
         $this->_initialize(self::MODE_MASTER, $domain, $password, $options);
     }
@@ -609,15 +613,14 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function initialize_slave($master, $password, $force = FALSE, $start = TRUE)
+    public function initialize_slave($domain, $master, $password, $force = FALSE, $start = TRUE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         $options['force'] = $force;
         $options['start'] = $start;
-        $options['master'] = $master;
+        $options['master_hostname'] = $master;
 
-        // TODO: load domain from master node / SDN request
         $this->_initialize(self::MODE_SLAVE, $domain, $password, $options);
     }
 
@@ -628,7 +631,7 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function initialize_standalone($domain, $password = NULL, $force = FALSE, $start = TRUE)
+    public function initialize_standalone($domain = NULL, $password = NULL, $force = FALSE, $start = TRUE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -637,6 +640,9 @@ class LDAP_Driver extends LDAP_Engine
 
         if (empty($password))
             $password = LDAP_Utilities::generate_password();
+
+        if (empty($domain))
+            $domain = self::DEFAULT_DOMAIN;
 
         $this->_initialize(self::MODE_STANDALONE, $domain, $password, $options);
     }
@@ -931,7 +937,23 @@ class LDAP_Driver extends LDAP_Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! Network_Utils::is_valid_domain($domain))
-            return lang('ldap_domain_is_invalid');
+            return lang('ldap_domain_invalid');
+    }
+
+    /**
+     * Validates master hostname.
+     *
+     * @param string $hostname master hostname
+     *
+     * @return string error message if master hostname is invalid
+     */
+
+    public function validate_master_hostname($hostname)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        if (! Network_Utils::is_valid_hostname($hostname))
+            return lang('ldap_master_hostname_invalid');
     }
 
     /**
@@ -947,7 +969,7 @@ class LDAP_Driver extends LDAP_Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! (isset($mode) && array_key_exists($mode, $this->modes)))
-            return lang('ldap_mode_is_invalid');
+            return lang('ldap_mode_invalid');
     }
 
     /**
@@ -964,7 +986,7 @@ class LDAP_Driver extends LDAP_Engine
 
         // TODO
         if (empty($password))
-            return lang('base_password_is_invalid');
+            return lang('base_password_invalid');
     }
 
     /**
@@ -980,7 +1002,7 @@ class LDAP_Driver extends LDAP_Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (($policy !== self::POLICY_LOCALHOST) && ($policy !== self::POLICY_LAN))
-            return lang('ldap_security_policy_is_invalid');
+            return lang('ldap_security_policy_invalid');
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -1070,11 +1092,10 @@ class LDAP_Driver extends LDAP_Engine
         // Set sane security policy
         //-------------------------
 
-        if ($mode === self::MODE_SLAVE)
+        if ($mode === self::MODE_MASTER)
             $this->set_security_policy(self::POLICY_LAN);
         else
             $this->set_security_policy(self::POLICY_LOCALHOST);
-       
 
         // Import the base LDIF data
         //--------------------------

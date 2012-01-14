@@ -18,6 +18,7 @@ Requires: app-base-core
 Requires: app-mode-core
 Requires: app-network-core
 Requires: openldap-servers >= 2.4.19
+Requires: openldap-clients >= 2.4.19
 Requires: openssl
 
 %description core

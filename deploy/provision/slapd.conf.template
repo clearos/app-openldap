@@ -56,8 +56,8 @@ sizelimit 10000
 
 moduleload accesslog.la
 moduleload ppolicy.la
-moduleload syncprov.la
 moduleload memberof.la
+moduleload syncprov.la
 
 
 # Monitor database

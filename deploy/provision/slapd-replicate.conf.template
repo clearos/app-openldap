@@ -27,7 +27,7 @@ include /etc/openldap/schema/kolab2.schema
 include /etc/openldap/schema/horde.schema
 
 # Samba extension
-include /etc/openldap/schema/samba.schema
+include /etc/openldap/schema/samba3.schema
 
 # Zarafa extension
 include /etc/openldap/schema/zarafa.schema
@@ -39,12 +39,13 @@ include /etc/openldap/schema/zarafa.schema
 pidfile /var/run/openldap/slapd.pid
 argsfile /var/run/openldap/slapd.args
 
-# TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
-# TLSCertificateFile     /etc/openldap/cacerts/cert.pem
-# TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
+#TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
+#TLSCertificateFile     /etc/openldap/cacerts/cert.pem
+#TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
 
-# rootDSE /etc/openldap/rootDSE.ldif
-
+# TODO: does Kolab really need this?
+#rootDSE /etc/openldap/rootDSE.ldif
+#
 defaultsearchbase "@@@base_dn@@@"
 
 allow bind_v2
@@ -53,9 +54,9 @@ loglevel 0
 
 sizelimit 10000
 
-modulepath /usr/lib/openldap
 moduleload accesslog.la
 moduleload ppolicy.la
+moduleload memberof.la
 
 
 # Monitor database
@@ -105,6 +106,9 @@ index  cn approx,sub,pres,eq
 index  sn approx,sub,pres,eq
 index  givenName approx,sub,pres,eq
 
+# Contact extension
+index  clearMailAliases approx,sub,pres,eq
+
 # Samba extension
 index  sambaSID eq,sub
 index  sambaSIDList eq 
@@ -120,10 +124,15 @@ index  kolabDeleteflag pres,eq
 # password policies 
 overlay ppolicy
 
+# memberOf
+overlay memberof
+
 # replication
+#provider=ldaps://@@@master_hostname@@@:636
+#FIXME
 syncrepl
 	rid=0
-	provider=ldaps://@@@master_hostname@@@:636
+	provider=ldap://@@@master_hostname@@@:389
 	bindmethod=simple
 	searchbase="@@@base_dn@@@"
 	binddn="cn=manager,cn=internal,@@@base_dn@@@"
@@ -138,98 +147,24 @@ syncrepl
 # refer updates
 updateref ldap://@@@master_hostname@@@
 
-access to dn="@@@base_dn@@@" attrs=children
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=domain-maintainer,cn=internal,@@@base_dn@@@" write
-
-access to dn="cn=internal,@@@base_dn@@@" attrs=children
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=domain-maintainer,cn=internal,@@@base_dn@@@" write
-
 access to attrs=userPassword
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" =wx
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" =wx
 	by self =wx
 	by anonymous =x
 	by * none stop
 
 access to attrs=mail
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
 	by * read stop
 
 access to attrs=uid
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by * read stop
-
-access to attrs=cyrus-userquota
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by self read stop
-
-access to attrs=kolabHomeServer
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by * read stop
-
-access to attrs=kolabHomeMTA
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
 	by * read stop
 
 access to dn="cn=nobody,@@@base_dn@@@"
 	by anonymous auth stop
 
 access to dn="cn=manager,cn=internal,@@@base_dn@@@"
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read
 	by self write
 	by anonymous auth stop
-
-access to dn="cn=admin,cn=internal,@@@base_dn@@@"
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read
-	by self write
-	by anonymous auth stop
-
-access to dn="cn=maintainer,cn=internal,@@@base_dn@@@"
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" read
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read
-	by self write
-	by anonymous auth stop
-
-access to dn.regex="(.*,)?cn=internal,@@@base_dn@@@"
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by self write
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read 
-	by anonymous auth stop
-
-access to dn.regex="(.*,)?cn=external,@@@base_dn@@@"
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
-	by * read stop
-
-access to dn="cn=external,@@@base_dn@@@"
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read 
-	by * search stop
-
-access to dn="cn=internal,@@@base_dn@@@"
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read 
-	by * search stop
-
-access to dn="k=kolab,@@@base_dn@@@"
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" read
-	by group/kolabGroupOfNames="cn=domain-maintainer,cn=internal,@@@base_dn@@@" read
-	by dn="cn=nobody,cn=internal,@@@base_dn@@@" read 
-	by * none stop    
 
 access to *
 	by self write
-	by group/kolabGroupOfNames="cn=admin,cn=internal,@@@base_dn@@@" write
-	by group/kolabGroupOfNames="cn=maintainer,cn=internal,@@@base_dn@@@" write
 	by * read stop

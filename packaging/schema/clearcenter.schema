@@ -1,32 +1,104 @@
 ###########################################################################
 #
-# ClearCenter
+# ClearCenter's (was Point Clark Networks)
 #
-# Requires: core.schema, nis.schema
-#
-# 1.3.6.1.4.1.654321      - root
-# 1.3.6.1.4.1.654321.2    - LDAP
-# 1.3.6.1.4.1.654321.2.1  - Attributes
-# 1.3.6.1.4.1.654321.2.2  - Object Classes
-#
-# TODO: s/654321/IANA_number/g
+# 1.3.6.1.4.1.25573      - root
+# 1.3.6.1.4.1.25573.4    - LDAP for ClearCenter
+# 1.3.6.1.4.1.25573.4.1  - Attributes
+# 1.3.6.1.4.1.25573.4.2  - Object Classes
 #
 ###########################################################################
 
-# objectIdentifier ClearCenterRoot 1.3.6.1.4.1.654321
-# objectIdentifier ClearCenterLDAP ClearCenterRoot:2
-# objectIdentifier ClearCenterAttribute ClearCenterLDAP:1
-# objectIdentifier ClearCenterObjectClass ClearCenterLDAP:2
+objectIdentifier ClearCenterRoot 1.3.6.1.4.1.25573
+objectIdentifier ClearCenterLDAP ClearCenterRoot:4
+objectIdentifier ClearCenterAttribute ClearCenterLDAP
+objectIdentifier ClearCenterObjectClass ClearCenterLDAP
 
 ###########################################################################
 #
+# Google Apps Extensions
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearGoogleAppsAccount ClearCenterObjectClass:200
+
+objectIdentifier clearGoogleAppsState ClearCenterAttribute:200
+
 # Attributes
-#
-###########################################################################
+#--------------------------------------------------------------------------
+
+attributetype ( clearGoogleAppsState
+    NAME 'clearGoogleAppsState'
+    DESC 'state of Google Apps account'
+    EQUALITY integerMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearGoogleAppsAccount
+    NAME 'clearGoogleAppsAccount'
+    SUP top AUXILIARY
+    DESC 'ClearOS Google Apps account object'
+    MUST ( uid )
+    MAY ( clearGoogleAppsState ) )
 
 ###########################################################################
 #
-# Object Classes
+# Central Management
 #
 ###########################################################################
 
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearcenterDeviceAccount ClearCenterObjectClass:300
+
+objectIdentifier clearcenterDeviceID ClearCenterAttribute:300
+objectIdentifier clearcenterDeviceName ClearCenterAttribute:301
+objectIdentifier clearcenterDeviceMode ClearCenterAttribute:302
+objectIdentifier clearcenterDeviceAddress ClearCenterAttribute:303
+
+# Attributes
+#--------------------------------------------------------------------------
+
+attributetype ( clearcenterDeviceID
+    NAME 'clearcenterDeviceID'
+    DESC 'ClearCenter device ID'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterDeviceName
+    NAME 'clearcenterDeviceName'
+    DESC 'ClearCenter device name'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterDeviceMode
+    NAME 'clearcenterDeviceMode'
+    DESC 'ClearCenter device mode'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterDeviceAddress
+    NAME 'clearcenterDeviceAddress'
+    DESC 'ClearCenter device address'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearcenterDeviceAccount
+    NAME 'clearcenterDeviceAccount'
+    SUP top STRUCTURAL
+    DESC 'ClearCenter device account object'
+    MUST ( clearcenterDeviceID )
+    MAY ( clearcenterDeviceName $ clearcenterDeviceMode $ clearcenterDeviceAddress ) )
