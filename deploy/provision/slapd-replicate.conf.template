@@ -135,7 +135,7 @@ syncrepl
 	provider=ldap://@@@master_hostname@@@:389
 	bindmethod=simple
 	searchbase="@@@base_dn@@@"
-	binddn="cn=manager,cn=internal,@@@base_dn@@@"
+	binddn="cn=manager,ou=Internal,@@@base_dn@@@"
 	credentials=@@@bind_pw@@@
 	filter="(objectclass=*)"
 	schemachecking=on
@@ -158,10 +158,8 @@ access to attrs=mail
 access to attrs=uid
 	by * read stop
 
-access to dn="cn=nobody,@@@base_dn@@@"
-	by anonymous auth stop
 
-access to dn="cn=manager,cn=internal,@@@base_dn@@@"
+access to dn="cn=manager,ou=Internal,@@@base_dn@@@"
 	by self write
 	by anonymous auth stop
 

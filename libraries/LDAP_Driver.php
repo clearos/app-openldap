@@ -519,8 +519,6 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $file = new File(self::FILE_INITIALIZED);
-
         if ($this->ldaph === NULL)
             $this->ldaph = Utilities::get_ldap_handle();
 
@@ -645,24 +643,6 @@ class LDAP_Driver extends LDAP_Engine
             $domain = self::DEFAULT_DOMAIN;
 
         $this->_initialize(self::MODE_STANDALONE, $domain, $password, $options);
-    }
-
-    /**
-     * Returns state of LDAP setup.
-     *
-     * @return boolean TRUE if LDAP has been initialized
-     */
-
-    public function is_initialized()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new File(self::FILE_INITIALIZED);
-
-        if ($file->exists())
-            return TRUE;
-        else
-            return FALSE;
     }
 
     /**
@@ -1102,18 +1082,18 @@ class LDAP_Driver extends LDAP_Engine
 
         $this->_set_initialization_status(lang('openldap_importing_data'));
 
-        $this->_import_ldif(self::FILE_DATA);
+        if ($mode !== self::MODE_SLAVE)
+            $this->_import_ldif(self::FILE_DATA);
 
         // Do some cleanup tasks
         //----------------------
 
         $this->_set_initialization_status(lang('openldap_preparing_startup'));
-
-        $this->_set_initialized();
         $this->_set_startup($start);
         $this->synchronize();
 
         $this->_set_initialization_status('');
+        $this->_set_initialized();
     }
 
     /**
@@ -1146,7 +1126,7 @@ class LDAP_Driver extends LDAP_Engine
 
         $shell = new Shell();
 
-        $shell->execute(self::COMMAND_SLAPPASSWD, "-s $bind_pw");
+        $shell->execute(self::COMMAND_SLAPPASSWD, "-s '$bind_pw'");
         $bind_pw_hash = $shell->get_first_output_line();
 
         // Create internal configuration file
@@ -1213,12 +1193,6 @@ class LDAP_Driver extends LDAP_Engine
         $newfile->create('root', 'root', '0644');
         $newfile->add_lines("$contents\n");
 
-        // Slave mode... bug out, we're done
-        //----------------------------------
-
-        if ($mode === self::MODE_SLAVE)
-            return;
-
         // Create DB_CONFIG configuration
         //-------------------------------
 
@@ -1248,6 +1222,12 @@ class LDAP_Driver extends LDAP_Engine
 
         $newfile->create('ldap', 'ldap', '0644');
         $newfile->add_lines("$contents\n");
+
+        // Slave mode... bug out, we're done
+        //----------------------------------
+
+        if ($mode === self::MODE_SLAVE)
+            return;
 
         // LDAP provision data file
         //-------------------------
@@ -1351,23 +1331,6 @@ class LDAP_Driver extends LDAP_Engine
         } catch (Exception $e) {
             throw new Engine_Exception(clearos_exception_message($e));
         }
-    }
-
-    /**
-     * Sets initialized flag.
-     * 
-     * @return void
-     * @throws Engine_Exception
-     */
-
-    protected function _set_initialized()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new File(self::FILE_INITIALIZED);
-
-        if (! $file->exists())
-            $file->create("root", "root", "0644");
     }
 
     /**
