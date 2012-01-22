@@ -4,5 +4,4 @@
 #---------------------
 
 rm -f /var/clearos/openldap/config.php
-rm -f /var/clearos/openldap/initialized.php
 rm -f /var/clearos/openldap/status

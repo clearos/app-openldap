@@ -151,7 +151,6 @@ class LDAP_Driver extends LDAP_Engine
     const FILE_DATA = '/var/clearos/openldap/provision/provision.ldif';
     const FILE_DBCONFIG = '/var/lib/ldap/DB_CONFIG';
     const FILE_DBCONFIG_ACCESSLOG = '/var/lib/ldap/accesslog/DB_CONFIG';
-    const FILE_INITIALIZED = '/var/clearos/openldap/initialized.php';
     const FILE_INITIALIZING = '/var/clearos/openldap/initializing';
     const FILE_LDAP_CONFIG = '/etc/openldap/ldap.conf';
     const FILE_SLAPD_CONFIG = '/etc/openldap/slapd.conf';
@@ -896,6 +895,9 @@ class LDAP_Driver extends LDAP_Engine
     public function synchronize()
     {
         clearos_profile(__METHOD__, __LINE__);
+
+        if (! $this->is_initialized())
+            return;
 
         $this->_synchronize_files();
     }
