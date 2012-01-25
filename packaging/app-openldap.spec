@@ -13,6 +13,7 @@ Provides: system-ldap-driver
 Requires: app-base-core
 Requires: app-mode-core
 Requires: app-network-core
+Requires: csplugin-filewatch
 Requires: openldap-servers >= 2.4.19
 Requires: openldap-clients >= 2.4.19
 Requires: openssl
@@ -33,6 +34,7 @@ cp -r * %{buildroot}/usr/clearos/apps/openldap/
 install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
+install -D -m 0644 packaging/filewatch-openldap-network.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-network.conf
 install -D -m 0644 packaging/schema/RADIUS-LDAPv3.schema %{buildroot}/etc/openldap/schema/RADIUS-LDAPv3.schema
 install -D -m 0644 packaging/schema/clearcenter.schema %{buildroot}/etc/openldap/schema/clearcenter.schema
 install -D -m 0644 packaging/schema/clearfoundation.schema %{buildroot}/etc/openldap/schema/clearfoundation.schema
@@ -75,6 +77,7 @@ exit 0
 /usr/clearos/apps/openldap/deploy
 /usr/clearos/apps/openldap/language
 /usr/clearos/apps/openldap/libraries
+/etc/clearsync.d/filewatch-openldap-network.conf
 /etc/openldap/schema/RADIUS-LDAPv3.schema
 /etc/openldap/schema/clearcenter.schema
 /etc/openldap/schema/clearfoundation.schema

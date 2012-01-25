@@ -35,6 +35,7 @@ $app['core_provides'] = array(
 $app['core_requires'] = array(
     'app-mode-core',
     'app-network-core',
+    'csplugin-filewatch',
     'openldap-servers >= 2.4.19',
     'openldap-clients >= 2.4.19',
     'openssl',
@@ -47,6 +48,7 @@ $app['core_directory_manifest'] = array(
 );
 
 $app['core_file_manifest'] = array(
+    'filewatch-openldap-network.conf'=> array('target' => '/etc/clearsync.d/filewatch-openldap-network.conf'),
     'schema/clearfoundation.schema' => array( 'target' => '/etc/openldap/schema/clearfoundation.schema' ),
     'schema/clearcenter.schema' => array( 'target' => '/etc/openldap/schema/clearcenter.schema' ),
     'schema/horde.schema' => array( 'target' => '/etc/openldap/schema/horde.schema' ),
