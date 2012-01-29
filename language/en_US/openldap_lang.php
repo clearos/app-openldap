@@ -1,7 +1,7 @@
 <?php
 
 $lang['openldap_app_name'] = 'OpenLDAP Driver';
-$lang['openldap_app_description'] = 'The OpenLDAP Driver description'; // FIXME
+$lang['openldap_app_description'] = 'The OpenLDAP Driver app provides the the necessary tools for users, groups, accounts and other directory services.';
 $lang['openldap_openldap_server'] = 'OpenLDAP Server';
 $lang['openldap_preparing_startup'] = 'Preparing startup...';
 $lang['openldap_importing_data'] = 'Importing data...';

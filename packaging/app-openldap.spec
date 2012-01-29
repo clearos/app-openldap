@@ -20,7 +20,7 @@ Requires: openldap-clients >= 2.4.19
 Requires: openssl
 
 %description
-The OpenLDAP Driver description
+The OpenLDAP Driver app provides the the necessary tools for users, groups, accounts and other directory services.
 
 This package provides the core API and libraries.
 
