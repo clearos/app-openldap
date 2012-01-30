@@ -1009,6 +1009,13 @@ class LDAP_Driver extends LDAP_Engine
 
         $status = $file->lookup_value('/^status_message\s*=\s*/');
 
+        // Detect if LDAP has died.
+        if ($this->ldaph === NULL)
+            $this->ldaph = Utilities::get_ldap_handle();
+
+        if ($this->is_initialized() && (!$this->ldaph->is_online()))
+            $status = lang('openldap_directory_directory_is_offline');
+
         return $status;
     }
 
