@@ -1,15 +1,18 @@
 
-Name: app-openldap-core
-Group: ClearOS/Libraries
+Name: app-openldap
 Epoch: 1
-Version: 1.0.1
+Version: 1.0.2
 Release: 1%{dist}
 Summary: OpenLDAP Driver - APIs and install
 License: LGPLv3
-Packager: ClearFoundation
-Vendor: ClearFoundation
+Group: ClearOS/Libraries
 Source: app-openldap-%{version}.tar.gz
 Buildarch: noarch
+%description
+The OpenLDAP Driver app provides the the necessary tools for users, groups, accounts and other directory services.
+
+%package core
+Summary: OpenLDAP Driver - APIs and install
 Provides: system-ldap-driver
 Requires: app-base-core
 Requires: app-mode-core
@@ -19,13 +22,13 @@ Requires: openldap-servers >= 2.4.19
 Requires: openldap-clients >= 2.4.19
 Requires: openssl
 
-%description
+%description core
 The OpenLDAP Driver app provides the the necessary tools for users, groups, accounts and other directory services.
 
 This package provides the core API and libraries.
 
 %prep
-%setup -q -n app-openldap-%{version}
+%setup -q
 %build
 
 %install
@@ -48,7 +51,7 @@ install -D -m 0644 packaging/schema/samba.schema %{buildroot}/etc/openldap/schem
 install -D -m 0644 packaging/schema/zarafa.schema %{buildroot}/etc/openldap/schema/zarafa.schema
 install -D -m 0644 packaging/slapd.php %{buildroot}/var/clearos/base/daemon/slapd.php
 
-%post
+%post core
 logger -p local6.notice -t installer 'app-openldap-core - installing'
 
 if [ $1 -eq 1 ]; then
@@ -59,7 +62,7 @@ fi
 
 exit 0
 
-%preun
+%preun core
 if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-openldap-core - uninstalling'
     [ -x /usr/clearos/apps/openldap/deploy/uninstall ] && /usr/clearos/apps/openldap/deploy/uninstall
@@ -67,7 +70,7 @@ fi
 
 exit 0
 
-%files
+%files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/openldap/packaging
 %exclude /usr/clearos/apps/openldap/tests
