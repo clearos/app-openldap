@@ -68,7 +68,6 @@ clearos_load_library('mode/Mode_Factory');
 
 use \clearos\apps\base\Configuration_File as Configuration_File;
 use \clearos\apps\base\Daemon as Daemon;
-use \clearos\apps\base\Engine as Engine;
 use \clearos\apps\base\File as File;
 use \clearos\apps\base\Folder as Folder;
 use \clearos\apps\base\Shell as Shell;
@@ -78,11 +77,9 @@ use \clearos\apps\ldap\LDAP_Utilities as LDAP_Utilities;
 use \clearos\apps\mode\Mode_Engine as Mode_Engine;
 use \clearos\apps\network\Hostname as Hostname;
 use \clearos\apps\network\Network_Utils as Network_Utils;
-use \clearos\apps\openldap_directory\Utilities as Utilities;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/Daemon');
-clearos_load_library('base/Engine');
 clearos_load_library('base/File');
 clearos_load_library('base/Folder');
 clearos_load_library('base/Shell');
@@ -92,7 +89,6 @@ clearos_load_library('ldap/LDAP_Utilities');
 clearos_load_library('mode/Mode_Engine');
 clearos_load_library('network/Hostname');
 clearos_load_library('network/Network_Utils');
-clearos_load_library('openldap_directory/Utilities');
 
 // Exceptions
 //-----------
@@ -519,7 +515,7 @@ class LDAP_Driver extends LDAP_Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
+            $this->ldaph = $this->get_ldap_handle();
 
         $initialization_status = $this->_get_system_status_message();
 
@@ -1011,10 +1007,11 @@ class LDAP_Driver extends LDAP_Engine
 
         // Detect if LDAP has died.
         if ($this->ldaph === NULL)
-            $this->ldaph = Utilities::get_ldap_handle();
+            $this->ldaph = $this->get_ldap_handle();
 
+        // TODO: should differentiate between startup and dead LDAP
         if ($this->is_initialized() && (!$this->ldaph->is_online()))
-            $status = lang('openldap_directory_directory_is_offline');
+            $status = lang('openldap_directory_starting_up');
 
         return $status;
     }
