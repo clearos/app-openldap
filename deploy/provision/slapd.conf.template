@@ -144,26 +144,24 @@ logsuccess TRUE
 logpurge 32+00:00 01+00:00
 
 # syncuser granted limitless searches
-limits dn.exact="cn=updateuser,@@@base_dn@@@" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited
-
-access to attrs=userPassword
-	by self =wx
-	by anonymous =x
-	by * none stop
-
-access to attrs=mail
-	by * read stop
-
-access to attrs=uid
-	by * read stop
-
-access to dn="cn=nobody,@@@base_dn@@@"
-	by anonymous auth stop
-
-access to dn="cn=manager,cn=internal,@@@base_dn@@@"
-	by self write
-	by anonymous auth stop
+limits dn.exact="cn=syncuser,ou=Internal,@@@base_dn@@@" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited
 
 access to *
-	by self write
-	by * read stop
+    by dn="cn=syncuser,ou=Internal,@@@base_dn@@@" write
+    by * break
+
+access to attrs=userPassword
+    by self =wx
+    by anonymous =x
+    by * none stop
+
+access to attrs=mail
+    by * read stop
+
+access to attrs=uid
+    by * read stop
+
+access to *
+    by self write
+    by peername.ip=127.0.0.1 read
+    by * none stop

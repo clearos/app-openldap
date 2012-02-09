@@ -125,44 +125,41 @@ index  kolabDeleteflag pres,eq
 overlay ppolicy
 
 # memberOf
-overlay memberof
+# overlay memberof
 
 # replication
 #provider=ldaps://@@@master_hostname@@@:636
 #FIXME
 syncrepl
-	rid=0
-	provider=ldap://@@@master_hostname@@@:389
-	bindmethod=simple
-	searchbase="@@@base_dn@@@"
-	binddn="cn=manager,ou=Internal,@@@base_dn@@@"
-	credentials=@@@bind_pw@@@
-	filter="(objectclass=*)"
-	schemachecking=on
-	type=refreshAndPersist
-	syncdata=accesslog
-	retry="15 +"
-	logbase="cn=accesslog"
+    rid=0
+    provider=ldap://@@@master_hostname@@@:389
+    bindmethod=simple
+    searchbase="@@@base_dn@@@"
+    binddn="cn=syncuser,ou=Internal,@@@base_dn@@@"
+    credentials=@@@sync_key@@@
+    filter="(objectclass=*)"
+    schemachecking=on
+    type=refreshAndPersist
+    syncdata=accesslog
+    retry="15 +"
+    logbase="cn=accesslog"
 
 # refer updates
 updateref ldap://@@@master_hostname@@@
 
 access to attrs=userPassword
-	by self =wx
-	by anonymous =x
-	by * none stop
+    by self =wx
+    by anonymous =x
+    by * none stop
 
 access to attrs=mail
-	by * read stop
+    by * read stop
 
 access to attrs=uid
-	by * read stop
-
-
-access to dn="cn=manager,ou=Internal,@@@base_dn@@@"
-	by self write
-	by anonymous auth stop
+    by * read stop
 
 access to *
-	by self write
-	by * read stop
+    by self write
+    by peername.ip=127.0.0.1 read
+    by * none stop
+

@@ -499,6 +499,20 @@ class LDAP_Driver extends LDAP_Engine
     }
 
     /**
+     * Returns the DN of the synchronize user.
+     *
+     * @return string DN of the synchronize user
+     * @throws Engine_Exception
+     */
+
+    public function get_syncuser_dn()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        return "cn=syncuser,ou=Internal," . $this->get_base_dn();
+    }
+
+    /**
      * Returns status of account system.
      *
      * - LDAP_Engine::STATUS_INITIALIZING
@@ -606,13 +620,17 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function initialize_slave($domain, $master, $password, $force = FALSE, $start = TRUE)
+    public function initialize_slave($domain, $master, $sync_key, $password = NULL, $force = FALSE, $start = TRUE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         $options['force'] = $force;
         $options['start'] = $start;
         $options['master_hostname'] = $master;
+        $options['sync_key'] = $sync_key;
+
+        if (empty($password))
+            $password = LDAP_Utilities::generate_password();
 
         $this->_initialize(self::MODE_SLAVE, $domain, $password, $options);
     }
@@ -1035,6 +1053,7 @@ class LDAP_Driver extends LDAP_Engine
         $force = isset($options['force']) ? $options['force'] : FALSE;
         $start = isset($options['start']) ? $options['start'] : TRUE;
         $master_hostname = isset($options['master_hostname']) ? $options['master_hostname'] : '';
+        $sync_key = isset($options['sync_key']) ? $options['sync_key'] : '';
 
         // Bail if LDAP is already initialized (and not a re-initialize)
         //--------------------------------------------------------------
@@ -1044,12 +1063,13 @@ class LDAP_Driver extends LDAP_Engine
             return;
         }
 
+        // Shutdown slapd if it is running
         // KLUDGE: shutdown Samba or it will try to write information to LDAP
         //-------------------------------------------------------------------
 
         $this->_set_initialization_status(lang('openldap_preparing_system'));
 
-        $samba_list = array('smb', 'nmb', 'winbind');
+        $samba_list = array('slapd', 'smb', 'nmb', 'winbind');
 
         try {
             foreach ($samba_list as $daemon) {
@@ -1073,7 +1093,7 @@ class LDAP_Driver extends LDAP_Engine
 
         $this->_set_initialization_status(lang('openldap_generating_configuration'));
 
-        $this->_initialize_configuration($mode, $domain, $password, $hostname, $master_hostname);
+        $this->_initialize_configuration($mode, $domain, $password, $hostname, $master_hostname, $sync_key);
 
         // Set sane security policy
         //-------------------------
@@ -1112,7 +1132,7 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    protected function _initialize_configuration($mode, $domain, $password, $hostname, $master_hostname = '')
+    protected function _initialize_configuration($mode, $domain, $password, $hostname, $master_hostname = '', $sync_key = '')
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -1144,8 +1164,10 @@ class LDAP_Driver extends LDAP_Engine
         $config .= "bind_pw = $bind_pw\n";
         $config .= "bind_pw_hash = $bind_pw_hash\n";
 
-        if ($mode === self::MODE_SLAVE)
+        if ($mode === self::MODE_SLAVE) {
             $config .= "master_hostname = $master_hostname\n";
+            $config .= "sync_key = $sync_key\n";
+        }
 
         $file = new File(self::FILE_CONFIG);
 
@@ -1172,6 +1194,7 @@ class LDAP_Driver extends LDAP_Engine
         $contents = preg_replace("/\@\@\@bind_dn\@\@\@/", $bind_dn, $contents);
         $contents = preg_replace("/\@\@\@bind_pw\@\@\@/", $bind_pw, $contents);
         $contents = preg_replace("/\@\@\@bind_pw_hash\@\@\@/", $bind_pw_hash, $contents);
+        $contents = preg_replace("/\@\@\@sync_key\@\@\@/", $sync_key, $contents);
         $contents = preg_replace("/\@\@\@domain\@\@\@/", $domain, $contents);
         $contents = preg_replace("/\@\@\@master_hostname\@\@\@/", $master_hostname, $contents);
 
