@@ -33,8 +33,6 @@ objectIdentifier clearSHA1Password ClearAttribute:112
 objectIdentifier clearMD5Password ClearAttribute:113
 objectIdentifier clearMicrosoftNTPassword ClearAttribute:114
 objectIdentifier clearMicrosoftLanmanPassword ClearAttribute:115
-objectIdentifier clearMailAliases ClearAttribute:120
-objectIdentifier clearMailForwarders ClearAttribute:121
 
 # Attributes
 #--------------------------------------------------------------------------
@@ -81,6 +79,37 @@ attributetype ( clearMicrosoftLanmanPassword
     SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{32}
     SINGLE-VALUE )
 
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearAccount
+    NAME 'clearAccount'
+    SUP top AUXILIARY
+    DESC 'ClearOS account object'
+    MUST ( uid $ clearAccountStatus )
+    MAY ( uidNumber $ gidNumber $ displayName $ givenName $ sn $ title $
+    description $ homeDirectory $ loginShell $
+    clearSHAPassword $ clearSHA1Password $ clearMD5Password $
+    clearMicrosoftNTPassword ) )
+
+
+###########################################################################
+#
+# Contact Extension
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearContactAccount ClearObjectClass:200
+
+objectIdentifier clearMailAliases ClearAttribute:200
+objectIdentifier clearMailForwarders ClearAttribute:201
+
+# Attributes
+#--------------------------------------------------------------------------
+
 attributetype ( clearMailAliases
     NAME 'clearMailAliases'
     DESC 'Mail aliases'
@@ -98,17 +127,36 @@ attributetype ( clearMailForwarders
 # Class
 #--------------------------------------------------------------------------
 
-objectclass ( clearAccount
-    NAME 'clearAccount'
+objectclass ( clearContactAccount
+    NAME 'clearContactAccount'
     SUP top AUXILIARY
-    DESC 'ClearOS account object'
-    MUST ( uid $ clearAccountStatus )
-    MAY ( c $ l $ o $ ou $ st $ sn $ userCertificate $ description $ 
-    displayName $ facsimileTelephoneNumber $ givenName $ gidNumber $ 
-    homeDirectory $ loginShell $ mail $ mobile $ userPKCS12 $ postalCode $ 
-    postOfficeBox $ roomNumber $ street $ telephoneNumber $ title $ 
-    uidNumber $ clearSHAPassword $ clearSHA1Password $ clearMD5Password $ 
-    clearMicrosoftNTPassword ) )
+    DESC 'Contact account object'
+    MUST ( uid )
+    MAY ( c $ l $ o $ ou $ st $ facsimileTelephoneNumber $ mail $ mobile $
+    postalCode $ postOfficeBox $ roomNumber $ street $ telephoneNumber $
+    clearMailAliases $ clearMailForwarders ) )
+
+
+###########################################################################
+#
+# Certificates Extension
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearCertificatesAccount ClearObjectClass:300
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearCertificatesAccount
+    NAME 'clearCertificatesAccount'
+    SUP top AUXILIARY
+    DESC 'Certificates account object'
+    MUST ( uid )
+    MAY ( userCertificate $ userPKCS12 ) )
 
 
 ###########################################################################
@@ -120,12 +168,12 @@ objectclass ( clearAccount
 # Identifiers
 #--------------------------------------------------------------------------
 
-objectIdentifier clearPbxAccount ClearObjectClass:300
+objectIdentifier clearPbxAccount ClearObjectClass:400
 
-objectIdentifier clearPbxPassword ClearAttribute:300
-objectIdentifier clearPbxExtension ClearAttribute:301
-objectIdentifier clearPbxPresenceState ClearAttribute:302
-objectIdentifier clearPbxState ClearAttribute:303
+objectIdentifier clearPbxPassword ClearAttribute:400
+objectIdentifier clearPbxExtension ClearAttribute:401
+objectIdentifier clearPbxPresenceState ClearAttribute:402
+objectIdentifier clearPbxState ClearAttribute:403
 
 # Attributes
 #--------------------------------------------------------------------------
