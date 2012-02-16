@@ -39,12 +39,9 @@ include /etc/openldap/schema/zarafa.schema
 pidfile /var/run/openldap/slapd.pid
 argsfile /var/run/openldap/slapd.args
 
-#TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
-#TLSCertificateFile     /etc/openldap/cacerts/cert.pem
-#TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
-
-# TODO: does Kolab really need this?
-#rootDSE /etc/openldap/rootDSE.ldif
+TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
+TLSCertificateFile     /etc/openldap/cacerts/cert.pem
+TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
 
 defaultsearchbase "@@@base_dn@@@"
 

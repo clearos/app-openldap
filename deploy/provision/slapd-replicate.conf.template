@@ -39,13 +39,10 @@ include /etc/openldap/schema/zarafa.schema
 pidfile /var/run/openldap/slapd.pid
 argsfile /var/run/openldap/slapd.args
 
-#TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
-#TLSCertificateFile     /etc/openldap/cacerts/cert.pem
-#TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
+TLSCACertificateFile   /etc/openldap/cacerts/cert.pem
+TLSCertificateFile     /etc/openldap/cacerts/cert.pem
+TLSCertificateKeyFile  /etc/openldap/cacerts/key.pem
 
-# TODO: does Kolab really need this?
-#rootDSE /etc/openldap/rootDSE.ldif
-#
 defaultsearchbase "@@@base_dn@@@"
 
 allow bind_v2
@@ -128,12 +125,14 @@ overlay ppolicy
 # overlay memberof
 
 # replication
-#provider=ldaps://@@@master_hostname@@@:636
-#FIXME
 syncrepl
     rid=0
-    provider=ldap://@@@master_hostname@@@:389
+    provider=ldaps://@@@master_hostname@@@:636
     bindmethod=simple
+    tls_cert=/etc/openldap/cacerts/cert.pem
+    tls_cacert=/etc/openldap/cacerts/cert.pem
+    tls_key=/etc/openldap/cacerts/key.pem
+    tls_reqcert=allow
     searchbase="@@@base_dn@@@"
     binddn="cn=syncuser,ou=Internal,@@@base_dn@@@"
     credentials=@@@sync_key@@@
@@ -162,4 +161,3 @@ access to *
     by self write
     by peername.ip=127.0.0.1 read
     by * none stop
-
