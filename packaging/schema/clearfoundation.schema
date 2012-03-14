@@ -104,8 +104,33 @@ objectclass ( clearAccount
 
 objectIdentifier clearContactAccount ClearObjectClass:200
 
-objectIdentifier clearMailAliases ClearAttribute:200
-objectIdentifier clearMailForwarders ClearAttribute:201
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearContactAccount
+    NAME 'clearContactAccount'
+    SUP top AUXILIARY
+    DESC 'Contact account object'
+    MUST ( uid )
+    MAY ( c $ l $ o $ ou $ st $ facsimileTelephoneNumber $ mobile $
+    postalCode $ postOfficeBox $ roomNumber $ street $ telephoneNumber ) )
+
+
+###########################################################################
+#
+# Mail Extension
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearMailAccount ClearObjectClass:250
+objectIdentifier clearMailGroupAccount ClearObjectClass:251
+
+objectIdentifier clearMailAliases ClearAttribute:250
+objectIdentifier clearMailForwarders ClearAttribute:251
+objectIdentifier clearMailDistributionList ClearAttribute:252
 
 # Attributes
 #--------------------------------------------------------------------------
@@ -124,17 +149,29 @@ attributetype ( clearMailForwarders
     SUBSTR caseIgnoreIA5SubstringsMatch
     SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
 
+attributetype ( clearMailDistributionList
+    NAME 'clearMailDistributionList'
+    DESC 'Mail distribution list flag'
+    EQUALITY integerMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+    SINGLE-VALUE )
+
 # Class
 #--------------------------------------------------------------------------
 
-objectclass ( clearContactAccount
-    NAME 'clearContactAccount'
+objectclass ( clearMailAccount
+    NAME 'clearMailAccount'
     SUP top AUXILIARY
-    DESC 'Contact account object'
+    DESC 'Mail account object'
     MUST ( uid )
-    MAY ( c $ l $ o $ ou $ st $ facsimileTelephoneNumber $ mail $ mobile $
-    postalCode $ postOfficeBox $ roomNumber $ street $ telephoneNumber $
-    clearMailAliases $ clearMailForwarders ) )
+    MAY ( mail $ clearMailAliases $ clearMailForwarders ) )
+
+objectclass ( clearMailGroupAccount
+    NAME 'clearMailGroupAccount'
+    SUP top AUXILIARY
+    DESC 'Mail group account object'
+    MUST ( gidNumber )
+    MAY ( mail $ clearMailDistributionList ) )
 
 
 ###########################################################################
