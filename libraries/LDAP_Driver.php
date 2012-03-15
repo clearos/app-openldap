@@ -74,6 +74,7 @@ use \clearos\apps\base\Shell as Shell;
 use \clearos\apps\ldap\LDAP_Client as LDAP_Client;
 use \clearos\apps\ldap\LDAP_Engine as LDAP_Engine;
 use \clearos\apps\ldap\LDAP_Utilities as LDAP_Utilities;
+use \clearos\apps\ldap\Nslcd as Nslcd;
 use \clearos\apps\mode\Mode_Engine as Mode_Engine;
 use \clearos\apps\network\Hostname as Hostname;
 use \clearos\apps\network\Network_Utils as Network_Utils;
@@ -86,6 +87,7 @@ clearos_load_library('base/Shell');
 clearos_load_library('ldap/LDAP_Client');
 clearos_load_library('ldap/LDAP_Engine');
 clearos_load_library('ldap/LDAP_Utilities');
+clearos_load_library('ldap/Nslcd');
 clearos_load_library('mode/Mode_Engine');
 clearos_load_library('network/Hostname');
 clearos_load_library('network/Network_Utils');
@@ -866,6 +868,23 @@ class LDAP_Driver extends LDAP_Engine
         } catch (Exception $e) {
             // Not fatal
         }
+
+        // Restart everything to clean out caches
+        //---------------------------------------
+
+        if ($was_running)
+            $this->reset();
+
+        try {
+            $nslcd = new Nslcd();
+
+            if ($nslcd->get_running_state())
+                $nslcd->restart();
+            else
+                $nslcd->set_running_state(TRUE);
+        } catch (Exception $e) {
+            // Not fatal
+        }
     }
 
     /** 
@@ -1478,8 +1497,15 @@ class LDAP_Driver extends LDAP_Engine
 
             $target = new File($target);
 
-            if ($target->exists())
+            if ($target->exists()) {
+                $old_contents = $target->get_contents();
+
+                // Skip if contents haven't changes
+                if ($old_contents == $contents)
+                    continue;
+
                 $target->delete();
+            }
 
             $target->create($owner, $group, $permissions);
             $target->add_lines($contents);
