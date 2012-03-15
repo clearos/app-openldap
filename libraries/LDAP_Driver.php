@@ -1402,6 +1402,11 @@ class LDAP_Driver extends LDAP_Engine
 
         if ($matches === 0)
             $file->add_lines("status_message = $message\n");
+
+        if (empty($message))
+            $message = 'Finished initialization';
+
+        clearos_log('openldap', strtolower($message));
     }
 
     /**
