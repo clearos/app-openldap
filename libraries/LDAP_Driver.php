@@ -154,7 +154,7 @@ class LDAP_Driver extends LDAP_Engine
     const FILE_SLAPD_CONFIG = '/etc/openldap/slapd.conf';
     const FILE_STATUS = '/var/clearos/openldap/status';
     const FILE_SYSCONFIG = '/etc/sysconfig/ldap';
-    const FILE_LDIF_BACKUP = '/etc/openldap/backup.ldif';
+    const FILE_LDIF_SNAPSHOT = '/var/clearos/openldap/snapshot.ldif';
     const FILE_LDIF_NEW_DOMAIN = '/var/clearos/openldap/provision/newdomain.ldif';
     const FILE_LDIF_OLD_DOMAIN = '/var/clearos/openldap/provision/olddomain.ldif';
     const PATH_LDAP = '/var/lib/ldap';
@@ -214,7 +214,7 @@ class LDAP_Driver extends LDAP_Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function export($ldif = self::FILE_LDIF_BACKUP, $dbnum = self::CONSTANT_BASE_DB_NUM)
+    public function export($ldif = self::FILE_LDIF_SNAPSHOT, $dbnum = self::CONSTANT_BASE_DB_NUM)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -572,16 +572,62 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $import = new File(self::FILE_LDIF_BACKUP, TRUE);
+        $import = new File(self::FILE_LDIF_SNAPSHOT, TRUE);
 
         if (! $import->exists())
             return FALSE;
 
-        $this->_import_ldif(self::FILE_LDIF_BACKUP);
+        // Import the LDIF
+        //----------------
+
+        $this->_import_ldif(self::FILE_LDIF_SNAPSHOT);
+
+        // Synchronize the configlets with the correct LDAP info
+        //------------------------------------------------------
 
         $this->synchronize();
 
-        // TODO: should this restart Nscd?
+        // Start LDAP
+        //-----------
+
+        if (! $this->get_running_state()) {
+            $this->set_running_state(TRUE);
+            sleep(5); // Dirty, but give LDAP a chance to start
+        }
+
+        $this->set_boot_state(TRUE);
+
+        // Reset LDAP caches/connectors
+        //-----------------------------
+
+        try {
+            $nslcd = new Nslcd();
+            $nslcd->set_boot_state(TRUE);
+
+            if ($nslcd->get_running_state())
+                $nslcd->reset();
+            else
+                $nslcd->set_running_state(TRUE);
+        } catch (Exception $e) {
+            // Not fatal
+        }
+
+        // TODO: a bit messy...
+        if (clearos_library_installed('accounts/Nscd')) {
+            clearos_load_library('accounts/Nscd');
+
+            try {
+                $nscd = new \clearos\apps\accounts\Nscd();
+                $nscd->set_boot_state(TRUE);
+
+                if ($nscd->get_running_state())
+                    $nscd->reset();
+                else
+                    $nscd->set_running_state(TRUE);
+            } catch (Exception $e) {
+                // Not fatal
+            }
+        }
 
         return TRUE;
     }
@@ -1324,7 +1370,7 @@ class LDAP_Driver extends LDAP_Engine
         $filename = self::PATH_LDAP_BACKUP . '/' . "backup-" . strftime("%m-%d-%Y-%H-%M-%S", time()) . ".ldif";
 
         try {
-            if ($this->is_initialized())
+            if ($was_running && ($this->is_initialized()))
                 $this->export($filename);
         } catch (Exception $e) {
             // Exports can fail if LDAP is busted
