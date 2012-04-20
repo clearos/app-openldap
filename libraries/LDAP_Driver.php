@@ -218,6 +218,9 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
+        if (! $this->is_initialized()) 
+            return;
+
         $export = new File($ldif, TRUE);
 
         if ($export->exists())
