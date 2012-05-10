@@ -252,6 +252,39 @@ objectclass ( clearPbxAccount
     MAY ( clearPbxExtension $ clearPbxState $ clearPbxPresenceState ) )
 
 
+###########################################################################
+#
+# Master Node
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearMasterNode ClearObjectClass:500
+
+objectIdentifier clearMasterMailDomain ClearAttribute:500
+
+# Attributes
+#--------------------------------------------------------------------------
+
+attributetype ( clearMasterMailDomain
+    NAME 'clearMasterMailDomain'
+    DESC 'Master mail domain'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{128}
+    SINGLE-VALUE )
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearMasterNode
+    NAME 'clearMasterNode'
+    SUP top AUXILIARY
+    DESC 'Master node object'
+    MUST ( uid )
+    MAY ( clearMasterMailDomain ) )
+
 
 
 ###########################################################################
