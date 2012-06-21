@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 1.1.6
+Version: 1.2.0
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -38,6 +38,7 @@ This package provides the core API and libraries.
 mkdir -p -m 755 %{buildroot}/usr/clearos/apps/openldap
 cp -r * %{buildroot}/usr/clearos/apps/openldap/
 
+install -d -m 0755 %{buildroot}/etc/openldap/cacerts
 install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
@@ -78,6 +79,7 @@ exit 0
 %exclude /usr/clearos/apps/openldap/packaging
 %exclude /usr/clearos/apps/openldap/tests
 %dir /usr/clearos/apps/openldap
+%dir /etc/openldap/cacerts
 %dir /var/clearos/openldap
 %dir /var/clearos/openldap/backup
 %dir /var/clearos/openldap/provision
