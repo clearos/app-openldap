@@ -1475,7 +1475,7 @@ class LDAP_Driver extends LDAP_Engine
         $this->set_boot_state(TRUE);
 
         if ($start)
-            $this->restart();
+            $this->restart(FALSE);
     }
 
     /**
