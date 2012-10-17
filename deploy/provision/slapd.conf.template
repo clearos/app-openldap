@@ -147,7 +147,7 @@ access to *
     by dn="cn=syncuser,ou=Internal,@@@base_dn@@@" write
     by * break
 
-access to attrs=userPassword
+access to attrs=userPassword,clearMicrosoftNTPassword,clearSHA1Password,clearSHAPassword,sambaLMPassword,sambaNTPassword
     by self =wx
     by anonymous =x
     by * none stop
