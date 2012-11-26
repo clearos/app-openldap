@@ -37,3 +37,8 @@ if [ ! -s "$CRT" ]; then
     chown root.ldap $CRT
     chmod 640 $CRT
 fi
+
+# Restart LDAP in case of schema changes
+#---------------------------------------
+
+/sbin/service slapd condrestart >/dev/null 2>&1
