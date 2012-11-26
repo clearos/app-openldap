@@ -102,3 +102,78 @@ objectclass ( clearcenterDeviceAccount
     DESC 'ClearCenter device account object'
     MUST ( clearcenterDeviceID )
     MAY ( clearcenterDeviceName $ clearcenterDeviceMode $ clearcenterDeviceAddress ) )
+
+
+###########################################################################
+#
+# Network Map
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearcenterNetworkDeviceAccount ClearCenterObjectClass:400
+
+objectIdentifier clearcenterNetworkMAC ClearCenterAttribute:400
+objectIdentifier clearcenterNetworkIP ClearCenterAttribute:401
+objectIdentifier clearcenterNetworkUsername ClearCenterAttribute:402
+objectIdentifier clearcenterNetworkNickname ClearCenterAttribute:403
+objectIdentifier clearcenterNetworkDeviceType ClearCenterAttribute:404
+objectIdentifier clearcenterNetworkDeviceVendor ClearCenterAttribute:405
+
+# Attributes
+#--------------------------------------------------------------------------
+
+attributetype ( clearcenterNetworkMAC
+    NAME 'clearcenterNetworkMAC'
+    DESC 'ClearCenter MAC address'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{32}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterNetworkIP
+    NAME 'clearcenterNetworkIP'
+    DESC 'ClearCenter IP address'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterNetworkUsername
+    NAME 'clearcenterNetworkUsername'
+    DESC 'ClearCenter username'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{256}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterNetworkNickname
+    NAME 'clearcenterNetworkNickname'
+    DESC 'ClearCenter nickname'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{256}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterNetworkDeviceType
+    NAME 'clearcenterNetworkDeviceType'
+    DESC 'ClearCenter device type'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+attributetype ( clearcenterNetworkDeviceVendor
+    NAME 'clearcenterNetworkDeviceVendor'
+    DESC 'ClearCenter device vendor'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
+    SINGLE-VALUE )
+
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearcenterNetworkDeviceAccount
+    NAME 'clearcenterNetworkDeviceAccount'
+    SUP top STRUCTURAL
+    DESC 'ClearCenter network device object'
+    MUST ( clearcenterNetworkMAC $ clearcenterNetworkUsername )
+    MAY ( clearcenterNetworkIP $ clearcenterNetworkNickname $ clearcenterNetworkDeviceType $ clearcenterNetworkDeviceVendor ) )
