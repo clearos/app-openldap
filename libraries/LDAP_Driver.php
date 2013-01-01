@@ -254,17 +254,10 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($this->config['base_dn'] !== NULL) 
-            return $this->config['base_dn'];
+        if (is_null($this->config))
+            $this->_load_config();
 
-        if ($this->ldaph === NULL)
-            $this->ldaph = $this->get_ldap_handle();
-
-        $base_dn = $this->ldaph->get_base_dn();
-
-        $this->config['base_dn'] = $base_dn;
-
-        return $base_dn;
+        return $this->config['base_dn'];
     }
 
     /** 
@@ -278,10 +271,10 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($this->ldaph === NULL)
-            $this->ldaph = $this->get_ldap_handle();
+        if (is_null($this->config))
+            $this->_load_config();
 
-        return $this->ldaph->get_bind_dn();
+        return $this->config['bind_dn'];
     }
 
     /** 
@@ -295,10 +288,10 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($this->ldaph === NULL)
-            $this->ldaph = $this->get_ldap_handle();
+        if (is_null($this->config))
+            $this->_load_config();
 
-        return $this->ldaph->get_bind_password();
+        return $this->config['bind_pw'];
     }
 
     /** 
@@ -342,11 +335,23 @@ class LDAP_Driver extends LDAP_Engine
         if (is_null($this->config['base_dn']))
             $this->_load_config();
 
-        $base_dn = (empty($this->config['base_dn'])) ? '' : $this->config['base_dn'];
-        $bind_dn = (empty($this->config['bind_dn'])) ? '' : $this->config['bind_dn'];
-        $bind_pw = (empty($this->config['bind_pw'])) ? '' : $this->config['bind_pw'];
+        $read_config['base_dn'] = $this->config['base_dn'];
+        $read_config['bind_dn'] = $this->config['bind_dn'];
+        $read_config['bind_pw'] = $this->config['bind_pw'];
+        $read_config['bind_host'] = '127.0.0.1';
 
-        $ldaph = new LDAP_Client($base_dn, $bind_dn, $bind_pw);
+        $mode = $this->get_mode();
+
+        if ($mode === self::MODE_SLAVE) {
+            $write_config['base_dn'] = $this->config['base_dn'];
+            $write_config['bind_dn'] = $this->get_syncuser_dn();
+            $write_config['bind_pw'] = $this->config['sync_key'];
+            $write_config['bind_host'] = $this->config['master_hostname'];
+        } else {
+            $write_config = $read_config;
+        }
+
+        $ldaph = new LDAP_Client($read_config, $write_config);
 
         return $ldaph;
     }
