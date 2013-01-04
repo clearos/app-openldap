@@ -802,7 +802,7 @@ class LDAP_Driver extends LDAP_Engine
             // Load LDAP information
             //----------------------
 
-            $basedn = $this->ldaph->get_base_dn();
+            $basedn = $this->get_base_dn();
 
         } catch (Exception $e) {
             if ($was_running)
