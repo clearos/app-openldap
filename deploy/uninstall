@@ -1,7 +1,21 @@
 #!/bin/sh
 
-# Clean up state files
-#---------------------
+if [ -e /var/clearos/openldap/status ]; then
+    logger -p local6.notice -t installer "app-openldap-core - removing status file"
+    rm -f /var/clearos/openldap/status
+fi
 
-rm -f /var/clearos/openldap/config.php
-rm -f /var/clearos/openldap/status
+if [ -e /var/clearos/openldap/config.php ]; then
+    logger -p local6.notice -t installer "app-openldap-core - removing config file"
+    rm -f /var/clearos/openldap/config.php
+fi
+
+if [ -e /var/clearos/openldap/provision/provision.ldif ]; then
+    logger -p local6.notice -t installer "app-openldap-core - removing provisioning files"
+    rm -f /var/clearos/openldap/provision/*ldif
+fi
+
+if [ -e /var/clearos/openldap/snapshot.ldif ]; then
+    logger -p local6.notice -t installer "app-openldap-core - removing snapshot file"
+    rm -f /var/clearos/openldap/snapshot.ldif
+fi
