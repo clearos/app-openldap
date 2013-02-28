@@ -1554,20 +1554,20 @@ class LDAP_Driver extends LDAP_Engine
             // Write out file
             //---------------
 
-            $target = new File($target);
+            $target_file = new File($target, TRUE);
 
-            if ($target->exists()) {
-                $old_contents = $target->get_contents();
+            if ($target_file->exists()) {
+                $old_contents = $target_file->get_contents();
 
                 // Skip if contents haven't changes
                 if ($old_contents == $contents)
                     continue;
 
-                $target->delete();
+                $target_file->delete();
             }
 
-            $target->create($owner, $group, $permissions);
-            $target->add_lines($contents);
+            $target_file->create($owner, $group, $permissions);
+            $target_file->add_lines($contents);
         }
     }
 }
