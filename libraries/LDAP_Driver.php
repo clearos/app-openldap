@@ -1479,8 +1479,17 @@ class LDAP_Driver extends LDAP_Engine
 
         $this->set_boot_state(TRUE);
 
-        if ($start)
-            $this->restart(FALSE);
+        if ($start) {
+            try {
+                if ($this->get_running_state())
+                    $this->restart(FALSE);
+                else
+                    $this->set_running_state(TRUE);
+            } catch (Exception $e) {
+                sleep(5);
+                $this->restart(FALSE);
+            }
+        }
     }
 
     /**
