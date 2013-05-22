@@ -7,7 +7,7 @@
  * @package    openldap
  * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2011 ClearFoundation
+ * @copyright  2011-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/openldap/
  */
@@ -117,7 +117,7 @@ clearos_load_library('base/Validation_Exception');
  * @package    openldap
  * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2011 ClearFoundation
+ * @copyright  2011-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/openldap/
  */
@@ -149,7 +149,7 @@ class LDAP_Driver extends LDAP_Engine
     const FILE_DATA = '/var/clearos/openldap/provision/provision.ldif';
     const FILE_DBCONFIG = '/var/lib/ldap/DB_CONFIG';
     const FILE_DBCONFIG_ACCESSLOG = '/var/lib/ldap/accesslog/DB_CONFIG';
-    const FILE_INITIALIZING = '/var/clearos/openldap/initializing';
+    const FILE_INITIALIZING = '/var/clearos/openldap/lock/initializing';
     const FILE_LDAP_CONFIG = '/etc/openldap/ldap.conf';
     const FILE_SLAPD_CONFIG = '/etc/openldap/slapd.conf';
     const FILE_STATUS = '/var/clearos/openldap/status';
@@ -766,15 +766,30 @@ class LDAP_Driver extends LDAP_Engine
         if ($domain === $this->get_base_internet_domain())
             return;
 
-        // Prep file parsing
-        //------------------
+        // Lock state file
+        //----------------
 
-        $this->_set_initialization_status(lang('openldap_preparing_system'));
+        $lock_file = new File(self::FILE_INITIALIZING);
+        $initializing_lock = fopen(self::FILE_INITIALIZING, 'w');
 
-        if ($this->ldaph === NULL)
-            $this->ldaph = $this->get_ldap_handle();
+        if (!flock($initializing_lock, LOCK_EX | LOCK_NB)) {
+            clearos_log('openldap', 'domain change is already running');
+            return;
+        }
+
+        // Grab LDAP information
+        //----------------------
 
         try {
+
+            // Prep file parsing
+            //------------------
+
+            $this->_set_initialization_status(lang('openldap_preparing_system'));
+
+            if ($this->ldaph === NULL)
+                $this->ldaph = $this->get_ldap_handle();
+
             // Dump LDAP database to export file
             //----------------------------------
 
@@ -805,113 +820,136 @@ class LDAP_Driver extends LDAP_Engine
             $basedn = $this->get_base_dn();
 
         } catch (Exception $e) {
+            $this->_set_initialization_status('');
+
+            flock($initializing_lock, LOCK_UN);
+            fclose($initializing_lock);
+
+            if ($lock_file->exists())
+                $lock_file->delete();
+
             if ($was_running)
                 $this->set_running_state(TRUE);
 
             throw new Engine_Exception(clearos_exception_message($e));
         }
         
-        // Remove word wrap from LDIF data
-        //--------------------------------
+        // Do the domain change
+        //---------------------
 
-        $this->_set_initialization_status(lang('openldap_generating_configuration'));
+        try {
+            // Remove word wrap from LDIF data
+            //--------------------------------
 
-        $cleanlines = array();
+            $this->_set_initialization_status(lang('openldap_generating_configuration'));
 
-        foreach ($exportlines as $line) {
-            if (preg_match('/^\s+/', $line)) {
-                $previous = array_pop($cleanlines);
-                $cleanlines[] = $previous . preg_replace('/^ /', '', $line);
-            } else {
-                $cleanlines[] = $line;
+            $cleanlines = array();
+
+            foreach ($exportlines as $line) {
+                if (preg_match('/^\s+/', $line)) {
+                    $previous = array_pop($cleanlines);
+                    $cleanlines[] = $previous . preg_replace('/^ /', '', $line);
+                } else {
+                    $cleanlines[] = $line;
+                }
             }
+
+            // Rewrite LDAP export file
+            //-------------------------
+
+            $newbasedn = 'dc=' . preg_replace('/\./', ',dc=', $domain);
+            $matches = array();
+
+            preg_match('/^dc=([^,]*)/', $basedn, $matches);
+            $olddc = $matches[1];
+
+            preg_match('/^dc=([^,]*)/', $newbasedn, $matches);
+            $newdc = $matches[1];
+
+            $ldiflines = array();
+
+            // TODO: Handle Kolab externally - leave it here for now.
+            foreach ($cleanlines as $line) {
+                if (preg_match("/$basedn/", $line))
+                    $ldiflines[] = preg_replace("/$basedn/", $newbasedn, $line);
+                else if (preg_match("/^kolabHomeServer: /", $line))
+                    $ldiflines[] = "kolabHomeServer: $hostname";
+                else if (preg_match("/^mail: /", $line))
+                    $ldiflines[] = preg_replace("/@.*/", "@$domain", $line);
+                else if (preg_match("/^dc: $olddc/", $line))
+                    $ldiflines[] = "dc: $newdc";
+                else if (preg_match("/^uid: calendar@/", $line))
+                    $ldiflines[] = "uid: calendar@$domain";
+                else if (preg_match("/^kolabHost: /", $line))
+                    $ldiflines[] = "kolabHost: $hostname";
+                else if (preg_match("/^postfix-mydomain: /", $line))
+                    $ldiflines[] = "postfix-mydomain: $domain";
+                else if (preg_match("/^postfix-mydestination: /", $line))
+                    $ldiflines[] = "postfix-mydestination: $domain";
+                else
+                    $ldiflines[] = $line;
+            }
+
+            // Rewrite LDAP configuration file
+            //--------------------------------
+
+            $newldaplines = array();
+
+            foreach ($ldaplines as $line)
+                $newldaplines[] = preg_replace("/$basedn/", $newbasedn, $line);
+
+            //---------------------------------------------------------------
+            // Implement file changes
+            //---------------------------------------------------------------
+
+            // LDAP export file
+            //-----------------
+
+            $newexport = new File(self::FILE_LDIF_NEW_DOMAIN);
+
+            if ($newexport->exists())
+                $newexport->delete();
+
+            $newexport->create('root', 'root', '0600');
+            $newexport->dump_contents_from_array($ldiflines);
+
+            // LDAP configuration
+            //--------------------
+
+            $newldap = new File(self::FILE_SLAPD_CONFIG, TRUE);
+
+            if ($newldap->exists())
+                $newldap->delete();
+
+            $newldap->create('root', 'ldap', '0640');
+            $newldap->dump_contents_from_array($newldaplines);
+
+            // Import
+            //-------
+
+            $this->_set_initialization_status(lang('openldap_importing_data'));
+
+            $this->_import_ldif(self::FILE_LDIF_NEW_DOMAIN);
+
+            // Set new base DN in configuration
+            //---------------------------------
+
+            $file = new File(self::FILE_CONFIG);
+            $file->replace_lines('/^base_dn\s*=/', "base_dn = $newbasedn\n");
+            $file->replace_lines('/^bind_dn\s*=/', "bind_dn = " . self::CONSTANT_BIND_DN_PREFIX . ",$newbasedn\n");
+
+            $this->_set_initialization_status('');
+        } catch (Exception $e) {
+            $this->_set_initialization_status('');
+
+            flock($initializing_lock, LOCK_UN);
+            fclose($initializing_lock);
+
+            if ($lock_file->exists())
+                $lock_file->delete();
+
+            throw new Engine_Exception(clearos_exception_message($e));
         }
-
-        // Rewrite LDAP export file
-        //-------------------------
-
-        $newbasedn = 'dc=' . preg_replace('/\./', ',dc=', $domain);
-        $matches = array();
-
-        preg_match('/^dc=([^,]*)/', $basedn, $matches);
-        $olddc = $matches[1];
-
-        preg_match('/^dc=([^,]*)/', $newbasedn, $matches);
-        $newdc = $matches[1];
-
-        $ldiflines = array();
-
-        // TODO: Handle Kolab externally - leave it here for now.
-        foreach ($cleanlines as $line) {
-            if (preg_match("/$basedn/", $line))
-                $ldiflines[] = preg_replace("/$basedn/", $newbasedn, $line);
-            else if (preg_match("/^kolabHomeServer: /", $line))
-                $ldiflines[] = "kolabHomeServer: $hostname";
-            else if (preg_match("/^mail: /", $line))
-                $ldiflines[] = preg_replace("/@.*/", "@$domain", $line);
-            else if (preg_match("/^dc: $olddc/", $line))
-                $ldiflines[] = "dc: $newdc";
-            else if (preg_match("/^uid: calendar@/", $line))
-                $ldiflines[] = "uid: calendar@$domain";
-            else if (preg_match("/^kolabHost: /", $line))
-                $ldiflines[] = "kolabHost: $hostname";
-            else if (preg_match("/^postfix-mydomain: /", $line))
-                $ldiflines[] = "postfix-mydomain: $domain";
-            else if (preg_match("/^postfix-mydestination: /", $line))
-                $ldiflines[] = "postfix-mydestination: $domain";
-            else
-                $ldiflines[] = $line;
-        }
-
-        // Rewrite LDAP configuration file
-        //--------------------------------
-
-        $newldaplines = array();
-
-        foreach ($ldaplines as $line)
-            $newldaplines[] = preg_replace("/$basedn/", $newbasedn, $line);
-
-        //---------------------------------------------------------------
-        // Implement file changes
-        //---------------------------------------------------------------
-
-        // LDAP export file
-        //-----------------
-
-        $newexport = new File(self::FILE_LDIF_NEW_DOMAIN);
-
-        if ($newexport->exists())
-            $newexport->delete();
-
-        $newexport->create('root', 'root', '0600');
-        $newexport->dump_contents_from_array($ldiflines);
-
-        // LDAP configuration
-        //--------------------
-
-        $newldap = new File(self::FILE_SLAPD_CONFIG, TRUE);
-
-        if ($newldap->exists())
-            $newldap->delete();
-
-        $newldap->create('root', 'ldap', '0640');
-        $newldap->dump_contents_from_array($newldaplines);
-
-        // Import
-        //-------
-
-        $this->_set_initialization_status(lang('openldap_importing_data'));
-
-        $this->_import_ldif(self::FILE_LDIF_NEW_DOMAIN);
-
-        // Set new base DN in configuration
-        //---------------------------------
-
-        $file = new File(self::FILE_CONFIG);
-        $file->replace_lines('/^base_dn\s*=/', "base_dn = $newbasedn\n");
-        $file->replace_lines('/^bind_dn\s*=/', "bind_dn = " . self::CONSTANT_BIND_DN_PREFIX . ",$newbasedn\n");
-
-        $this->_set_initialization_status('');
 
         // Tell other LDAP dependent apps to grab latest configuration
         //------------------------------------------------------------
@@ -939,6 +977,15 @@ class LDAP_Driver extends LDAP_Engine
         } catch (Exception $e) {
             // Not fatal
         }
+
+        // Cleanup file / file lock
+        //-------------------------
+
+        flock($initializing_lock, LOCK_UN);
+        fclose($initializing_lock);
+
+        if ($lock_file->exists())
+            $lock_file->delete();
     }
 
     /** 
@@ -1502,6 +1549,18 @@ class LDAP_Driver extends LDAP_Engine
     protected function _synchronize_files()
     {
         clearos_profile(__METHOD__, __LINE__);
+
+        // Check initialization
+        //---------------------
+
+        $file = new File(self::FILE_INITIALIZING);
+
+        if ($file->exists()) {
+            $initializing_lock = fopen(self::FILE_INITIALIZING, 'r');
+
+            if (!flock($initializing_lock, LOCK_SH | LOCK_NB))
+                return;
+        }
 
         // Load directory configuration settings
         //--------------------------------------

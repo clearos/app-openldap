@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'openldap';
-$app['version'] = '1.4.22';
+$app['version'] = '1.4.38';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -44,10 +44,15 @@ $app['core_requires'] = array(
 );
 
 $app['core_directory_manifest'] = array(
-   '/etc/openldap/cacerts' => array(),
-   '/var/clearos/openldap' => array(),
-   '/var/clearos/openldap/backup' => array(),
-   '/var/clearos/openldap/provision' => array(),
+    '/etc/openldap/cacerts' => array(),
+    '/var/clearos/openldap' => array(),
+    '/var/clearos/openldap/backup' => array(),
+    '/var/clearos/openldap/provision' => array(),
+    '/var/clearos/openldap/lock' => array(
+        'mode' => '0775',
+        'owner' => 'root',
+        'group' => 'webconfig',
+    ),
 );
 
 $app['core_file_manifest'] = array(

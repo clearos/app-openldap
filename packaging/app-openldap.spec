@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 1.4.22
+Version: 1.4.38
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -41,6 +41,7 @@ cp -r * %{buildroot}/usr/clearos/apps/openldap/
 install -d -m 0755 %{buildroot}/etc/openldap/cacerts
 install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
+install -d -m 0775 %{buildroot}/var/clearos/openldap/lock
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
 install -D -m 0644 packaging/filewatch-openldap-network.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-network.conf
 install -D -m 0644 packaging/schema/RADIUS-LDAPv3.schema %{buildroot}/etc/openldap/schema/RADIUS-LDAPv3.schema
@@ -82,6 +83,7 @@ exit 0
 %dir /etc/openldap/cacerts
 %dir /var/clearos/openldap
 %dir /var/clearos/openldap/backup
+%dir %attr(0775,root,webconfig) /var/clearos/openldap/lock
 %dir /var/clearos/openldap/provision
 /usr/clearos/apps/openldap/deploy
 /usr/clearos/apps/openldap/language
