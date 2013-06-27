@@ -641,6 +641,42 @@ class LDAP_Driver extends LDAP_Engine
     }
 
     /**
+     * Imports an external LDIF file.
+     *
+     * @param string $filename path to LDIF file
+     *
+     * @return void
+     */
+
+    public function import_ldif($filename)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Shutdown LDAP if running
+        //-------------------------
+
+        $was_running = $this->get_running_state();
+
+        if ($was_running)
+            $this->set_running_state(FALSE);
+
+        // Import the LDIF file
+        //---------------------
+
+        $shell = new Shell();
+        $shell->execute(self::COMMAND_SLAPADD, '-n3 -l ' . $filename, TRUE);
+
+        // Fix file permissions
+        //---------------------
+
+        $folder = new Folder(self::PATH_LDAP);
+        $folder->chown('ldap', 'ldap', TRUE);
+
+        if ($was_running)
+            $this->set_running_state(TRUE);
+    }
+
+    /**
      * Initializes the LDAP database in master mode.
      *
      * @param string $mode LDAP server mode
