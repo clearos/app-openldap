@@ -61,6 +61,7 @@ objectIdentifier clearcenterDeviceID ClearCenterAttribute:300
 objectIdentifier clearcenterDeviceName ClearCenterAttribute:301
 objectIdentifier clearcenterDeviceMode ClearCenterAttribute:302
 objectIdentifier clearcenterDeviceAddress ClearCenterAttribute:303
+objectIdentifier clearcenterDeviceApps ClearCenterAttribute:304
 
 # Attributes
 #--------------------------------------------------------------------------
@@ -93,6 +94,13 @@ attributetype ( clearcenterDeviceAddress
     SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128}
     SINGLE-VALUE )
 
+attributetype ( clearcenterDeviceApps
+    NAME 'clearcenterDeviceApps'
+    DESC 'ClearCenter device apps'
+    EQUALITY caseIgnoreMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+    SINGLE-VALUE )
+
 # Class
 #--------------------------------------------------------------------------
 
@@ -101,7 +109,7 @@ objectclass ( clearcenterDeviceAccount
     SUP top STRUCTURAL
     DESC 'ClearCenter device account object'
     MUST ( clearcenterDeviceID )
-    MAY ( clearcenterDeviceName $ clearcenterDeviceMode $ clearcenterDeviceAddress ) )
+    MAY ( clearcenterDeviceName $ clearcenterDeviceMode $ clearcenterDeviceAddress $ clearcenterDeviceApps ) )
 
 
 ###########################################################################
