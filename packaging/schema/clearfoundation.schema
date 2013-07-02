@@ -286,6 +286,92 @@ objectclass ( clearMasterNode
     MAY ( clearMasterMailDomain ) )
 
 
+###########################################################################
+#
+# Policies
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearPolicy ClearObjectClass:600
+
+objectIdentifier clearPolicyName ClearAttribute:600
+objectIdentifier clearPolicyDescription ClearAttribute:601
+objectIdentifier clearPolicyApp ClearAttribute:602
+objectIdentifier clearPolicyState ClearAttribute:603
+objectIdentifier clearPolicyPriority ClearAttribute:604
+objectIdentifier clearPolicyGroup ClearAttribute:605
+objectIdentifier clearPolicySettings ClearAttribute:606
+
+# Attributes
+#--------------------------------------------------------------------------
+
+attributetype ( clearPolicyName
+    NAME 'clearPolicyName'
+    DESC 'ClearOS policy name'
+    EQUALITY caseIgnoreMatch
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+    SINGLE-VALUE )
+
+attributetype ( clearPolicyDescription
+    NAME 'clearPolicyDescription'
+    DESC 'ClearOS policy description'
+    EQUALITY caseIgnoreMatch
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+    SINGLE-VALUE )
+
+attributetype ( clearPolicyApp
+    NAME 'clearPolicyApp'
+    DESC 'ClearOS policy app name'
+    EQUALITY caseIgnoreMatch
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+    SINGLE-VALUE )
+
+attributetype ( clearPolicyState
+    NAME 'clearPolicyState'
+    DESC 'ClearOS policy state'
+    EQUALITY integerMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+    SINGLE-VALUE )
+
+attributetype ( clearPolicyPriority
+    NAME 'clearPolicyPriority'
+    DESC 'ClearOS policy priority'
+    EQUALITY integerMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+    SINGLE-VALUE )
+
+attributetype ( clearPolicyGroup
+    NAME 'clearPolicyGroup'
+    DESC 'ClearOS policy group'
+    EQUALITY caseIgnoreMatch
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( clearPolicySettings
+    NAME 'clearPolicySettings'
+    DESC 'ClearOS policy settings'
+    EQUALITY caseIgnoreMatch
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+    SINGLE-VALUE )
+
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearPolicy
+    NAME 'clearPolicy'
+    SUP top STRUCTURAL
+    DESC 'Policy object'
+    MUST ( clearPolicyName $ clearPolicyApp $ clearPolicyState $ clearPolicyGroup )
+    MAY ( clearPolicyDescription $ clearPolicySettings $ clearPolicyPriority ) )
+
 
 ###########################################################################
 #
