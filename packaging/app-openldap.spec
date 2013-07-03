@@ -49,6 +49,7 @@ install -D -m 0644 packaging/schema/clearcenter.schema %{buildroot}/etc/openldap
 install -D -m 0644 packaging/schema/clearfoundation.schema %{buildroot}/etc/openldap/schema/clearfoundation.schema
 install -D -m 0644 packaging/schema/horde.schema %{buildroot}/etc/openldap/schema/horde.schema
 install -D -m 0644 packaging/schema/kolab2.schema %{buildroot}/etc/openldap/schema/kolab2.schema
+install -D -m 0644 packaging/schema/owncloud.schema %{buildroot}/etc/openldap/schema/owncloud.schema
 install -D -m 0644 packaging/schema/pcn.schema %{buildroot}/etc/openldap/schema/pcn.schema
 install -D -m 0644 packaging/schema/rfc2307bis.schema %{buildroot}/etc/openldap/schema/rfc2307bis.schema
 install -D -m 0644 packaging/schema/rfc2739.schema %{buildroot}/etc/openldap/schema/rfc2739.schema
@@ -94,6 +95,7 @@ exit 0
 /etc/openldap/schema/clearfoundation.schema
 /etc/openldap/schema/horde.schema
 /etc/openldap/schema/kolab2.schema
+/etc/openldap/schema/owncloud.schema
 /etc/openldap/schema/pcn.schema
 /etc/openldap/schema/rfc2307bis.schema
 /etc/openldap/schema/rfc2739.schema

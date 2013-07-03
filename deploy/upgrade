@@ -38,6 +38,20 @@ if [ ! -s "$CRT" ]; then
     chmod 640 $CRT
 fi
 
+# Add OwnCloud schema
+#--------------------
+
+# config.php check: don't bother with upgrade if LDAP not yet provisioned
+if [ -e /var/clearos/openldap/config.php ]; then
+    CHECK=`grep ^include[[:space:]]*/etc/openldap/schema/owncloud.schema /etc/openldap/slapd.conf 2>/dev/null`
+
+    if [ -z "$CHECK" ]; then
+        logger -p local6.notice -t installer "app-openldap-core - adding owncloud schema"
+        # Messy - using samba3 as a file marker
+        sed -i -e "s/^include[[:space:]]*\/etc\/openldap\/schema\/samba3.schema/include \/etc\/openldap\/schema\/samba3.schema\n\n# OwnCloud\ninclude \/etc\/openldap\/schema\/owncloud.schema/" /etc/openldap/slapd.conf 
+    fi
+fi
+
 # Restart LDAP in case of schema changes
 #---------------------------------------
 
