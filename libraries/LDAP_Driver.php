@@ -231,16 +231,8 @@ class LDAP_Driver extends LDAP_Engine
         if ($this->ldaph === NULL)
             $this->ldaph = $this->get_ldap_handle();
 
-        $was_running = $this->get_running_state();
-
-        if ($was_running)
-            $this->set_running_state(FALSE);
-
         $shell = new Shell();
         $shell->execute(self::COMMAND_SLAPCAT, "-n$dbnum -l " . $ldif, TRUE);
-
-        if ($was_running)
-            $this->set_running_state(TRUE);
     }
 
     /** 
