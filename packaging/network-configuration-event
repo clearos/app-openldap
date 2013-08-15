@@ -1,3 +1,7 @@
 #!/bin/sh
 
+# Bail if we're only listening on localhost
+[ -e /etc/sysconfig/ldap ] && source /etc/sysconfig/ldap
+[ "$BIND_POLICY" == "localhost" ] && exit 0
+
 /sbin/service slapd condrestart
