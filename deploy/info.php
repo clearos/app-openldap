@@ -71,4 +71,8 @@ $app['core_file_manifest'] = array(
         'target' => '/var/clearos/events/network_configuration/openldap',
         'mode' => '0755'
     ),
+    'ldap-import'=> array(
+        'target' => '/usr/sbin/ldap-import',
+        'mode' => '0755'
+    ),
 );

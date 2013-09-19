@@ -1,0 +1,75 @@
+#!/usr/clearos/sandbox/usr/bin/php
+<?php
+
+/**
+ * Samba initialization script.
+ *
+ * @category   apps
+ * @package    samba
+ * @subpackage scripts
+ * @author     ClearFoundation <developer@clearfoundation.com>
+ * @copyright  2012 ClearFoundation
+ * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
+ * @link       http://www.clearfoundation.com/docs/developer/apps/samba/
+ */
+
+///////////////////////////////////////////////////////////////////////////////
+// B O O T S T R A P
+///////////////////////////////////////////////////////////////////////////////
+
+$bootstrap = getenv('CLEAROS_BOOTSTRAP') ? getenv('CLEAROS_BOOTSTRAP') : '/usr/clearos/framework/shared';
+require_once $bootstrap . '/bootstrap.php';
+
+///////////////////////////////////////////////////////////////////////////////
+// D E P E N D E N C I E S
+///////////////////////////////////////////////////////////////////////////////
+
+use \clearos\apps\base\File as File;
+use \clearos\apps\openldap\LDAP_Driver as LDAP_Driver;
+
+clearos_load_library('base/File');
+clearos_load_library('openldap/LDAP_Driver');
+
+///////////////////////////////////////////////////////////////////////////////
+// O P T I O N S
+///////////////////////////////////////////////////////////////////////////////
+
+$short_options = '';
+$short_options .= 'i:'; // Domain
+$short_options .= 'h';  // Help
+
+$help_options  = '';
+$help_options .= "  -i: Import file\n";
+$help_options .= "\n";
+$help_options .= "  -h: Help\n";
+
+$options = getopt($short_options);
+
+$help = isset($options['h']) ? TRUE : FALSE;
+$filename = isset($options['i']) ? $options['i'] : '';
+
+///////////////////////////////////////////////////////////////////////////////
+// M A I N
+///////////////////////////////////////////////////////////////////////////////
+
+$ldap = new LDAP_Driver();
+
+// Handle command line options
+//--------------------------------------------------------------------
+
+if ($help) {
+    echo "usage: " . $argv[0] . " [options]\n";
+    echo $help_options;
+    exit(0);
+}
+
+while (!file_exists($filename)) {
+    echo 'Import file path: ';
+    $filename = trim(fgets(STDIN));
+}
+
+// TODO: push this into the API, remove hard-coded stuff
+$file = new File($filename);
+$file->copy_to('/var/clearos/openldap/snapshot.ldif');
+
+$ldap->import();

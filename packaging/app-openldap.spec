@@ -42,6 +42,7 @@ install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
 install -d -m 0775 %{buildroot}/var/clearos/openldap/lock
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
+install -D -m 0755 packaging/ldap-import %{buildroot}/usr/sbin/ldap-import
 install -D -m 0755 packaging/network-configuration-event %{buildroot}/var/clearos/events/network_configuration/openldap
 install -D -m 0644 packaging/schema/RADIUS-LDAPv3.schema %{buildroot}/etc/openldap/schema/RADIUS-LDAPv3.schema
 install -D -m 0644 packaging/schema/clearcenter.schema %{buildroot}/etc/openldap/schema/clearcenter.schema
@@ -88,6 +89,7 @@ exit 0
 /usr/clearos/apps/openldap/deploy
 /usr/clearos/apps/openldap/language
 /usr/clearos/apps/openldap/libraries
+/usr/sbin/ldap-import
 /var/clearos/events/network_configuration/openldap
 /etc/openldap/schema/RADIUS-LDAPv3.schema
 /etc/openldap/schema/clearcenter.schema
