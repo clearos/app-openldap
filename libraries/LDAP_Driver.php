@@ -343,6 +343,15 @@ class LDAP_Driver extends LDAP_Engine
             $write_config = $read_config;
         }
 
+        // TDOO: revisit hack
+        if (file_exists('/usr/bin/samba-tool')) {
+            $read_config['protocol'] = 'ldaps';
+            $write_config['protocol'] = 'ldaps';
+        } else {
+            $read_config['protocol'] = 'ldap';
+            $write_config['protocol'] = 'ldap';
+        }
+
         $ldaph = new LDAP_Client($read_config, $write_config);
 
         return $ldaph;
