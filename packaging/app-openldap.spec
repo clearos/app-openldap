@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 1.4.71
+Version: 1.5.5
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
