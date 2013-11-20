@@ -142,7 +142,6 @@ syncrepl
     filter="(objectclass=*)"
     schemachecking=on
     type=refreshAndPersist
-    syncdata=accesslog
     retry="15 +"
     logbase="cn=accesslog"
 
