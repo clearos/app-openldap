@@ -327,6 +327,7 @@ class LDAP_Driver extends LDAP_Engine
         if (is_null($this->config['base_dn']))
             $this->_load_config();
 
+        $read_config['protocol'] = 'ldap';
         $read_config['base_dn'] = $this->config['base_dn'];
         $read_config['bind_dn'] = $this->config['bind_dn'];
         $read_config['bind_pw'] = $this->config['bind_pw'];
@@ -339,17 +340,15 @@ class LDAP_Driver extends LDAP_Engine
             $write_config['bind_dn'] = $this->get_syncuser_dn();
             $write_config['bind_pw'] = $this->config['sync_key'];
             $write_config['bind_host'] = $this->config['master_hostname'];
+            $write_config['protocol'] = 'ldaps';
         } else {
             $write_config = $read_config;
         }
 
-        // TDOO: revisit hack
+        // TODO: revisit hack
         if (file_exists('/usr/bin/samba-tool')) {
             $read_config['protocol'] = 'ldaps';
             $write_config['protocol'] = 'ldaps';
-        } else {
-            $read_config['protocol'] = 'ldap';
-            $write_config['protocol'] = 'ldap';
         }
 
         $ldaph = new LDAP_Client($read_config, $write_config);
