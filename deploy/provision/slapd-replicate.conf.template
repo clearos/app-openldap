@@ -111,17 +111,17 @@ index  clearMailAliases approx,sub,pres,eq
 
 # Samba extension
 index  sambaSID eq,sub
-index  sambaSIDList eq 
+index  sambaSIDList eq
 index  sambaPrimaryGroupSID eq
 index  sambaDomainName eq
-index  sambaGroupType eq 
+index  sambaGroupType eq
 
 # Kolab extension
 index  kolabDelegate approx,sub,pres,eq
 index  kolabHomeServer pres,eq
 index  kolabDeleteflag pres,eq
 
-# password policies 
+# password policies
 overlay ppolicy
 
 # memberOf
