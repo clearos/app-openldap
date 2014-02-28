@@ -18,7 +18,7 @@ clearos_load_language('openldap');
 ///////////////////////////////////////////////////////////////////////////////
 
 $configlet = array(
-	'title' => lang('openldap_app_name'),
+	'title' => lang('openldap_openldap_server'),
 	'package' => 'openldap-servers',
 	'process_name' => 'slapd',
 	'pid_file' => '/var/run/slapd.pid',
