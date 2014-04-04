@@ -1664,7 +1664,7 @@ class LDAP_Driver extends LDAP_Engine
                 $old_contents = $target_file->get_contents();
 
                 // Skip if contents haven't changes
-                if ($old_contents == $contents)
+                if (trim($old_contents) == trim($contents))
                     continue;
 
                 $target_file->delete();
