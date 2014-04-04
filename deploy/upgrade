@@ -8,11 +8,14 @@
 # Set default sysconfig
 #----------------------
 
-CHECK=`grep ^BIND_POLICY /etc/sysconfig/ldap 2>/dev/null`
+# ClearOS 6 only
+if [ -e /etc/sysconfig/ldap ]; then
+    CHECK=`grep ^BIND_POLICY /etc/sysconfig/ldap 2>/dev/null`
 
-if [ -z "$CHECK" ]; then
-    logger -p local6.notice -t installer "app-openldap-core - updating LDAP sysconfig"
-    cp /usr/clearos/apps/openldap/deploy/ldap.sysconfig /etc/sysconfig/ldap
+    if [ -z "$CHECK" ]; then
+        logger -p local6.notice -t installer "app-openldap-core - updating LDAP sysconfig"
+        cp /usr/clearos/apps/openldap/deploy/ldap.sysconfig /etc/sysconfig/ldap
+    fi
 fi
 
 # Grab bootstrap certificates from Certificate Manager
