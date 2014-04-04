@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'openldap';
-$app['version'] = '1.5.20';
+$app['version'] = '1.5.40';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -44,6 +44,7 @@ $app['core_requires'] = array(
 
 $app['core_directory_manifest'] = array(
     '/etc/openldap/cacerts' => array(),
+    '/var/clearos/events/openldap_online' => array(),
     '/var/clearos/openldap' => array(),
     '/var/clearos/openldap/backup' => array(),
     '/var/clearos/openldap/provision' => array(),
@@ -67,6 +68,7 @@ $app['core_file_manifest'] = array(
     'schema/samba.schema' => array( 'target' => '/etc/openldap/schema/samba3.schema' ),
     'schema/zarafa.schema' => array( 'target' => '/etc/openldap/schema/zarafa.schema' ),
     'slapd.php'=> array('target' => '/var/clearos/base/daemon/slapd.php'),
+    'filewatch-openldap-online-event.conf'=> array('target' => '/etc/clearsync.d/filewatch-openldap-online-event.conf'),
     'network-configuration-event'=> array(
         'target' => '/var/clearos/events/network_configuration/openldap',
         'mode' => '0755'
