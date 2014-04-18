@@ -38,11 +38,13 @@ mkdir -p -m 755 %{buildroot}/usr/clearos/apps/openldap
 cp -r * %{buildroot}/usr/clearos/apps/openldap/
 
 install -d -m 0755 %{buildroot}/etc/openldap/cacerts
+install -d -m 0755 %{buildroot}/var/clearos/events/openldap_configuration
 install -d -m 0755 %{buildroot}/var/clearos/events/openldap_online
 install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
 install -d -m 0775 %{buildroot}/var/clearos/openldap/lock
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
+install -D -m 0644 packaging/filewatch-openldap-configuration-event.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-configuration-event.conf
 install -D -m 0644 packaging/filewatch-openldap-online-event.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-online-event.conf
 install -D -m 0755 packaging/ldap-import %{buildroot}/usr/sbin/ldap-import
 install -D -m 0755 packaging/network-configuration-event %{buildroot}/var/clearos/events/network_configuration/openldap
@@ -83,6 +85,7 @@ exit 0
 %exclude /usr/clearos/apps/openldap/packaging
 %dir /usr/clearos/apps/openldap
 %dir /etc/openldap/cacerts
+%dir /var/clearos/events/openldap_configuration
 %dir /var/clearos/events/openldap_online
 %dir /var/clearos/openldap
 %dir /var/clearos/openldap/backup
@@ -91,6 +94,7 @@ exit 0
 /usr/clearos/apps/openldap/deploy
 /usr/clearos/apps/openldap/language
 /usr/clearos/apps/openldap/libraries
+/etc/clearsync.d/filewatch-openldap-configuration-event.conf
 /etc/clearsync.d/filewatch-openldap-online-event.conf
 /usr/sbin/ldap-import
 /var/clearos/events/network_configuration/openldap
