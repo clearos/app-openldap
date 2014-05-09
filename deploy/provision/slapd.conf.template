@@ -80,6 +80,11 @@ overlay syncprov
 syncprov-nopresent TRUE
 syncprov-reloadhint TRUE
 
+access to *
+    by self write
+    by peername.ip=127.0.0.1 read
+    by * none stop
+
 
 # Primary database
 #----------------------------------------------------------

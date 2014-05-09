@@ -75,6 +75,10 @@ rootdn     cn=accesslog
 index      default eq
 index      entryCSN,objectClass,reqEnd,reqResult,reqStart
 
+access to *
+    by self write
+    by peername.ip=127.0.0.1 read
+    by * none stop
 
 # Primary database
 #----------------------------------------------------------

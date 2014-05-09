@@ -1272,10 +1272,10 @@ class LDAP_Driver extends LDAP_Engine
 
         $this->_set_initialization_status(lang('openldap_preparing_startup'));
         $this->_set_startup($start);
-        $this->synchronize();
-
         $this->_set_initialization_status('');
         $this->_set_initialized();
+
+        $this->synchronize();
     }
 
     /**
