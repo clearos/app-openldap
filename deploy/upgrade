@@ -4,6 +4,7 @@
 #--------
 
 /usr/sbin/addsudo /usr/sbin/slapadd app-openldap-core
+/usr/sbin/addsudo /usr/sbin/slapcat app-openldap-core
 
 # Set default sysconfig
 #----------------------
