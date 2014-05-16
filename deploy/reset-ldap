@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    echo "You need to use the magic word"
+    exit 1
+fi
+
+if [ "$1" != "please" ]; then
+    echo "The magic word is \"please\""
+    exit 1
+fi
+
+rm -f /var/clearos/accounts/initialized 
+rm -f /var/clearos/accounts/config 
+rm -f /var/clearos/ldap/initialized
+rm -f /var/clearos/openldap/config.php
+rm -f /var/clearos/samba/init*
+rm -f /var/clearos/samba_common/initialized
+rm -f /var/clearos/samba_directory/lock/initializing
+rm -f /var/clearos/samba_directory/init*
+/sbin/service samba stop 2>/dev/null
+/sbin/service smb stop 2>/dev/null
+/sbin/service nmb stop 2>/dev/null
+/sbin/service winbind stop 2>/dev/null
+/sbin/service nscd stop 2>/dev/null
+/sbin/service nslcd stop 2>/dev/null
+/sbin/service slapd stop 2>/dev/null
