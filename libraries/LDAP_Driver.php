@@ -135,6 +135,7 @@ class LDAP_Driver extends LDAP_Engine
     // Policies
     const POLICY_LAN = 'lan';
     const POLICY_LOCALHOST = 'localhost';
+    const POLICY_ALL = 'all';
 
     // Commands
     const COMMAND_LDAP_MANAGER = '/usr/sbin/ldap-manager';
@@ -476,6 +477,7 @@ class LDAP_Driver extends LDAP_Engine
         return array(
             self::POLICY_LOCALHOST => lang('ldap_not_published'),
             self::POLICY_LAN => lang('ldap_local_network'),
+            self::POLICY_ALL => lang('ldap_all_networks'),
         );
     }
 
@@ -483,8 +485,9 @@ class LDAP_Driver extends LDAP_Engine
      * Returns security policy.
      *
      * The LDAP server can be configured to listen on:
-     * -  localhost only: LDAP::POLICY_LOCALHOST
-     * -  localhost and all LAN interfaces: LDAP::POLICY_LAN
+     * - localhost only: LDAP::POLICY_LOCALHOST
+     * - localhost and all LAN interfaces: LDAP::POLICY_LAN
+     * - all interfaces LDAP::POLICY_ALL
      *
      * @return string security policy
      * @throws Engine_Exception
@@ -1028,8 +1031,9 @@ class LDAP_Driver extends LDAP_Engine
      * Sets security policy.
      *
      * The LDAP server can be configured to listen on:
-     * -  localhost only: LDAP::POLICY_LOCALHOST
-     * -  localhost and all LAN interfaces: LDAP::POLICY_LAN
+     * - localhost only: LDAP::POLICY_LOCALHOST
+     * - localhost and all LAN interfaces: LDAP::POLICY_LAN
+     * - all interfaces LDAP::POLICY_ALL
      *
      * @param boolean $policy policy setting
      *
@@ -1153,7 +1157,7 @@ class LDAP_Driver extends LDAP_Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (($policy !== self::POLICY_LOCALHOST) && ($policy !== self::POLICY_LAN))
+        if (($policy !== self::POLICY_LOCALHOST) && ($policy !== self::POLICY_LAN) && ($policy !== self::POLICY_ALL))
             return lang('ldap_security_policy_invalid');
     }
 
@@ -1255,7 +1259,7 @@ class LDAP_Driver extends LDAP_Engine
         //-------------------------
 
         if ($mode === self::MODE_MASTER)
-            $this->set_security_policy(self::POLICY_LAN);
+            $this->set_security_policy(self::POLICY_ALL);
         else
             $this->set_security_policy(self::POLICY_LOCALHOST);
 
