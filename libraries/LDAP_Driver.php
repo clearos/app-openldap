@@ -820,6 +820,10 @@ class LDAP_Driver extends LDAP_Engine
         //----------------------
 
         try {
+            // Null out config
+            //----------------
+
+            $this->config == NULL;
 
             // Prep file parsing
             //------------------
@@ -995,7 +999,7 @@ class LDAP_Driver extends LDAP_Engine
 
         try {
             if ($was_running)
-                $this->synchronize(FALSE);
+                $this->synchronize(TRUE);
         } catch (Exception $e) {
             // Not fatal
         }
@@ -1063,17 +1067,23 @@ class LDAP_Driver extends LDAP_Engine
     /**
      * Sends a synchronization signal to LDAP aware apps.
      *
+     * The "synchronize" needs to behave differently in the initialization
+     * part of the code (notably, LDAP does not yet have to be up and
+     * running yet).
+     *
+     * @param boolean $prep flag to indicate that this is used in prep
+     *
      * @return void
      */
 
-    public function synchronize()
+    public function synchronize($prep = FALSE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         if (! $this->is_initialized())
             return;
 
-        $this->_synchronize_files();
+        $this->_synchronize_files($prep);
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -1582,11 +1592,13 @@ class LDAP_Driver extends LDAP_Engine
     /**
      * Synchronizes template files.
      *
+     * @param boolean $prep flag to indicate that this is used in prep
+     *
      * @return void
      * @throws Engine_Exception, Validation_Exception
      */
     
-    protected function _synchronize_files()
+    protected function _synchronize_files($prep = FALSE)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -1595,7 +1607,7 @@ class LDAP_Driver extends LDAP_Engine
 
         $file = new File(self::FILE_INITIALIZING);
 
-        if ($file->exists()) {
+        if (!$prep && $file->exists()) {
             $initializing_lock = fopen(self::FILE_INITIALIZING, 'r');
 
             if (!flock($initializing_lock, LOCK_SH | LOCK_NB))
@@ -1605,8 +1617,7 @@ class LDAP_Driver extends LDAP_Engine
         // Load directory configuration settings
         //--------------------------------------
 
-        if (is_null($this->config))
-            $this->_load_config();
+        $this->_load_config();
 
         $base_dn = (empty($this->config['base_dn'])) ? '' : $this->config['base_dn'];
         $bind_dn = (empty($this->config['bind_dn'])) ? '' : $this->config['bind_dn'];
