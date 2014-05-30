@@ -33,6 +33,14 @@ if [ -e /var/clearos/openldap/config.php ]; then
     fi
 fi
 
+# Add empty netgroup file
+#------------------------
+
+if [ ! -e /etc/netgroup ]; then
+    logger -p local6.notice -t installer "app-openldap-core - adding netgroup file"
+    touch /etc/netgroup
+fi
+
 # Configure server certificates
 #------------------------------
 
