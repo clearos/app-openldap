@@ -1,0 +1,33 @@
+#!/bin/sh
+
+update_certs() {
+    NICKNAME=$1
+    BOOTSTRAP=$2
+    PREFERRED=$3
+    TARGET=$4
+
+    if ( [ -e $PREFERRED ] && ! `diff $PREFERRED $TARGET >/dev/null 2>&1` ); then
+        logger -p local6.notice -t installer "app-openldap-core - $NICKNAME - prepping preferred"
+        cp $PREFERRED $TARGET
+        RESTART_LIST="$RESTART_LIST $TARGET"
+    elif ( [ ! -s "$TARGET" ] && [ -e $BOOTSTRAP ] ); then
+        logger -p local6.notice -t installer "app-openldap-core - $NICKNAME - prepping bootstrap"
+        cp $BOOTSTRAP $TARGET
+        RESTART_LIST="$RESTART_LIST $TARGET"
+    fi
+}
+
+update_certs "server certificate" /etc/pki/CA/bootstrap.crt /etc/pki/CA/sys-0-cert.pem /etc/openldap/certs/clearos-cert.pem
+update_certs "server key" /etc/pki/CA/bootstrap.key /etc/pki/CA/private/sys-0-key.pem /etc/openldap/certs/clearos-key.pem
+update_certs "server CA" /etc/pki/CA/bootstrap.crt /etc/pki/CA/ca-cert.pem /etc/openldap/certs/clearos-ca-cert.pem
+
+for FILE in $RESTART_LIST; do
+    echo "Updated $FILE"
+    chown root.ldap $FILE
+    chmod 640 $FILE
+done
+
+if [ -n "$RESTART_LIST" ]; then
+    logger -p local6.notice -t installer "app-openldap-core - restarting with new certs in place"
+    service slapd condrestart
+fi

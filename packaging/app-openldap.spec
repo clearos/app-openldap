@@ -44,6 +44,7 @@ install -d -m 0755 %{buildroot}/var/clearos/openldap
 install -d -m 0755 %{buildroot}/var/clearos/openldap/backup
 install -d -m 0775 %{buildroot}/var/clearos/openldap/lock
 install -d -m 0755 %{buildroot}/var/clearos/openldap/provision
+install -D -m 0755 packaging/certificate-manager-event %{buildroot}/var/clearos/events/certificate_manager/openldap
 install -D -m 0644 packaging/filewatch-openldap-configuration-event.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-configuration-event.conf
 install -D -m 0644 packaging/filewatch-openldap-online-event.conf %{buildroot}/etc/clearsync.d/filewatch-openldap-online-event.conf
 install -D -m 0755 packaging/ldap-import %{buildroot}/usr/sbin/ldap-import
@@ -94,6 +95,7 @@ exit 0
 /usr/clearos/apps/openldap/deploy
 /usr/clearos/apps/openldap/language
 /usr/clearos/apps/openldap/libraries
+/var/clearos/events/certificate_manager/openldap
 /etc/clearsync.d/filewatch-openldap-configuration-event.conf
 /etc/clearsync.d/filewatch-openldap-online-event.conf
 /usr/sbin/ldap-import
