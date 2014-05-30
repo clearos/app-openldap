@@ -22,12 +22,11 @@ update_certs "server key" /etc/pki/CA/bootstrap.key /etc/pki/CA/private/sys-0-ke
 update_certs "server CA" /etc/pki/CA/bootstrap.crt /etc/pki/CA/ca-cert.pem /etc/openldap/certs/clearos-ca-cert.pem
 
 for FILE in $RESTART_LIST; do
-    echo "Updated $FILE"
     chown root.ldap $FILE
     chmod 640 $FILE
 done
 
 if [ -n "$RESTART_LIST" ]; then
     logger -p local6.notice -t installer "app-openldap-core - restarting with new certs in place"
-    service slapd condrestart
+    service slapd condrestart >/dev/null 2>&1
 fi
