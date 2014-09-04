@@ -4,4 +4,4 @@
 #-----------------------
 
 logger -p local6.notice -t installer "app-openldap-core - disabling LDAP server"
-/sbin/chkconfig slapd off
+/sbin/chkconfig slapd off >/dev/null 2>&1
