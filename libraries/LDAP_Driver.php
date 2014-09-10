@@ -347,7 +347,7 @@ class LDAP_Driver extends LDAP_Engine
         }
 
         // TODO: revisit hack
-        if (file_exists('/usr/bin/samba-tool')) {
+        if (file_exists('/var/clearos/samba_directory/ldap.conf')) {
             $read_config['protocol'] = 'ldaps';
             $write_config['protocol'] = 'ldaps';
         }
