@@ -30,7 +30,7 @@ cn: Master
 uid: master$
 homeDirectory: /dev/null
 loginShell: /sbin/nologin
-uidNumber: 1000
+uidNumber: 2000
 gidNumber: 60000
 
 #----------------------------------------------------------
