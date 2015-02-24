@@ -22,6 +22,8 @@ fi
 # Add OwnCloud schema
 #--------------------
 
+DO_RESTART=""
+
 # config.php check: don't bother with upgrade if LDAP not yet provisioned
 if [ -e /var/clearos/openldap/config.php ]; then
     CHECK=`grep ^include[[:space:]]*/etc/openldap/schema/owncloud.schema /etc/openldap/slapd.conf 2>/dev/null`
@@ -30,6 +32,7 @@ if [ -e /var/clearos/openldap/config.php ]; then
         logger -p local6.notice -t installer "app-openldap-core - adding owncloud schema"
         # Messy - using samba3 as a file marker
         sed -i -e "s/^include[[:space:]]*\/etc\/openldap\/schema\/samba3.schema/include \/etc\/openldap\/schema\/samba3.schema\n\n# OwnCloud\ninclude \/etc\/openldap\/schema\/owncloud.schema/" /etc/openldap/slapd.conf 
+        DO_RESTART="yes"
     fi
 fi
 
@@ -64,4 +67,6 @@ fi
 # Restart LDAP in case of schema changes
 #---------------------------------------
 
-/sbin/service slapd condrestart >/dev/null 2>&1
+if [ -n "$DO_RESTART" ]; then
+    /sbin/service slapd condrestart >/dev/null 2>&1
+fi
