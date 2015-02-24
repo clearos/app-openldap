@@ -46,6 +46,21 @@ fi
 
 /var/clearos/events/certificate_manager/openldap
 
+# Detect lingering file permission problem in /var/lib/ldap
+#----------------------------------------------------------
+
+if [ -e /var/lib/ldap/__db.001 ]; then
+    OWNER=`stat --format=%U /var/lib/ldap/__db.001`
+
+    if [ "$OWNER" == "root" ]; then
+        logger -p local6.notice -t installer "app-ldap-core - fixing file permissions"
+        chown -R ldap.ldap /var/lib/ldap
+        service slapd restart
+        service nslcd restart
+        service nscd restart
+    fi
+fi
+
 # Restart LDAP in case of schema changes
 #---------------------------------------
 
