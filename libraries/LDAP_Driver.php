@@ -154,7 +154,7 @@ class LDAP_Driver extends LDAP_Engine
     const FILE_LDAP_CONFIG = '/etc/openldap/ldap.conf';
     const FILE_SLAPD_CONFIG = '/etc/openldap/slapd.conf';
     const FILE_STATUS = '/var/clearos/openldap/status';
-    const FILE_SYSCONFIG = '/etc/sysconfig/ldap';
+    const FILE_SYSCONFIG = '/etc/sysconfig/slapd';
     const FILE_LDIF_SNAPSHOT = '/var/clearos/openldap/snapshot.ldif';
     const FILE_LDIF_NEW_DOMAIN = '/var/clearos/openldap/provision/newdomain.ldif';
     const FILE_LDIF_OLD_DOMAIN = '/var/clearos/openldap/provision/olddomain.ldif';
