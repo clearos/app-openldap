@@ -19,6 +19,28 @@ if [ -e /etc/sysconfig/slapd ]; then
     fi
 fi
 
+# Grab bootstrap certificates from Certificate Manager
+#-----------------------------------------------------
+
+KEY_SOURCE=/etc/pki/CA/bootstrap.key
+KEY=/etc/openldap/cacerts/key.pem
+
+if [ ! -s "$KEY" ]; then
+    logger -p local6.notice -t installer "app-openldap-core - prepping server key"
+    cp $KEY_SOURCE $KEY
+    chown root.ldap $KEY
+    chmod 640 $KEY
+fi
+
+CRT_SOURCE=/etc/pki/CA/bootstrap.crt
+CRT=/etc/openldap/cacerts/cert.pem
+
+if [ ! -s "$CRT" ]; then
+    logger -p local6.notice -t installer "app-openldap-core - prepping server certificate"
+    cp $CRT_SOURCE $CRT
+    chown root.ldap $CRT
+    chmod 640 $CRT
+fi
 # Add OwnCloud schema
 #--------------------
 
