@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'openldap';
-$app['version'] = '2.1.7';
+$app['version'] = '2.2.0';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -68,6 +68,7 @@ $app['core_file_manifest'] = array(
     'schema/rfc2739.schema' => array( 'target' => '/etc/openldap/schema/rfc2739.schema' ),
     'schema/samba.schema' => array( 'target' => '/etc/openldap/schema/samba3.schema' ),
     'schema/zarafa.schema' => array( 'target' => '/etc/openldap/schema/zarafa.schema' ),
+    'schema/kopano.schema' => array( 'target' => '/etc/openldap/schema/kopano.schema' ),
     'slapd.php'=> array('target' => '/var/clearos/base/daemon/slapd.php'),
     'filewatch-openldap-online-event.conf'=> array('target' => '/etc/clearsync.d/filewatch-openldap-online-event.conf'),
     'filewatch-openldap-configuration-event.conf'=> array('target' => '/etc/clearsync.d/filewatch-openldap-configuration-event.conf'),

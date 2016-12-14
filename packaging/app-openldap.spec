@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 2.1.7
+Version: 2.2.0
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -54,6 +54,7 @@ install -D -m 0644 packaging/schema/clearcenter.schema %{buildroot}/etc/openldap
 install -D -m 0644 packaging/schema/clearfoundation.schema %{buildroot}/etc/openldap/schema/clearfoundation.schema
 install -D -m 0644 packaging/schema/horde.schema %{buildroot}/etc/openldap/schema/horde.schema
 install -D -m 0644 packaging/schema/kolab2.schema %{buildroot}/etc/openldap/schema/kolab2.schema
+install -D -m 0644 packaging/schema/kopano.schema %{buildroot}/etc/openldap/schema/kopano.schema
 install -D -m 0644 packaging/schema/owncloud.schema %{buildroot}/etc/openldap/schema/owncloud.schema
 install -D -m 0644 packaging/schema/pcn.schema %{buildroot}/etc/openldap/schema/pcn.schema
 install -D -m 0644 packaging/schema/rfc2307bis.schema %{buildroot}/etc/openldap/schema/rfc2307bis.schema
@@ -105,6 +106,7 @@ exit 0
 /etc/openldap/schema/clearfoundation.schema
 /etc/openldap/schema/horde.schema
 /etc/openldap/schema/kolab2.schema
+/etc/openldap/schema/kopano.schema
 /etc/openldap/schema/owncloud.schema
 /etc/openldap/schema/pcn.schema
 /etc/openldap/schema/rfc2307bis.schema

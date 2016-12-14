@@ -41,6 +41,7 @@ if [ ! -s "$CRT" ]; then
     chown root.ldap $CRT
     chmod 640 $CRT
 fi
+
 # Add OwnCloud schema
 #--------------------
 
@@ -53,7 +54,16 @@ if [ -e /var/clearos/openldap/config.php ]; then
     if [ -z "$CHECK" ]; then
         logger -p local6.notice -t installer "app-openldap-core - adding owncloud schema"
         # Messy - using samba3 as a file marker
-        sed -i -e "s/^include[[:space:]]*\/etc\/openldap\/schema\/samba3.schema/include \/etc\/openldap\/schema\/samba3.schema\n\n# OwnCloud\ninclude \/etc\/openldap\/schema\/owncloud.schema/" /etc/openldap/slapd.conf 
+        sed -i -e "s/^include[[:space:]]*\/etc\/openldap\/schema\/samba3.schema/include \/etc\/openldap\/schema\/samba3.schema\n\n# OwnCloud\ninclude \/etc\/openldap\/schema\/owncloud.schema/" /etc/openldap/slapd.conf
+        DO_RESTART="yes"
+    fi
+
+    CHECK=`grep ^include[[:space:]]*/etc/openldap/schema/kopano /etc/openldap/slapd.conf 2>/dev/null`
+
+    if [ -z "$CHECK" ]; then
+        logger -p local6.notice -t installer "app-openldap-core - adding Kopano schema"
+        # Messy - using samba3 as a file marker
+        sed -i -e "s/^include[[:space:]]*\/etc\/openldap\/schema\/samba3.schema/include \/etc\/openldap\/schema\/samba3.schema\n\n# Kopano\ninclude \/etc\/openldap\/schema\/kopano.schema/" /etc/openldap/slapd.conf
         DO_RESTART="yes"
     fi
 fi

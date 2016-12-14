@@ -35,6 +35,9 @@ include /etc/openldap/schema/owncloud.schema
 # Zarafa extension
 include /etc/openldap/schema/zarafa.schema
 
+# Kopano extension
+include /etc/openldap/schema/kopano.schema
+
 
 # Global configuration directives
 #----------------------------------------------------------
