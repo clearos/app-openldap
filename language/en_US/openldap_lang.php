@@ -4,6 +4,7 @@ $lang['openldap_app_description'] = 'The OpenLDAP Driver app provides the the ne
 $lang['openldap_app_name'] = 'OpenLDAP Driver';
 $lang['openldap_directory_is_offline'] = 'Directory is offline.';
 $lang['openldap_directory_starting_up'] = 'Directory is starting up.';
+$lang['openldap_domain_cannot_be_changed_in_slave_mode'] = 'Domain cannot be changed in slave mode.';
 $lang['openldap_generating_configuration'] = 'Generating configuration...';
 $lang['openldap_importing_data'] = 'Importing data...';
 $lang['openldap_openldap_server'] = 'OpenLDAP Server';

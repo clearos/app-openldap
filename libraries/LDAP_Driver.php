@@ -1152,7 +1152,7 @@ class LDAP_Driver extends LDAP_Engine
 
         // TODO
         if (empty($password))
-            return lang('base_password_invalid');
+            return lang('base_password_is_invalid');
     }
 
     /**
