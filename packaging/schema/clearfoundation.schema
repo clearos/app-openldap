@@ -372,6 +372,49 @@ objectclass ( clearPolicy
     MUST ( clearPolicyName $ clearPolicyApp $ clearPolicyState $ clearPolicyGroup )
     MAY ( clearPolicyDescription $ clearPolicySettings $ clearPolicyPriority ) )
 
+###########################################################################
+#
+# Two Factor Authentication Extension
+#
+###########################################################################
+
+# Identifiers
+#--------------------------------------------------------------------------
+
+objectIdentifier clearTwoFactorAuthAccount ClearObjectClass:700
+
+objectIdentifier clearTwoFactorAuthState ClearAttribute:701
+objectIdentifier clearTwoFactorAuthEmail ClearAttribute:702
+
+# Attributes
+#--------------------------------------------------------------------------
+
+attributetype ( clearTwoFactorAuthState
+    NAME 'clearTwoFactorAuthState'
+    DESC 'ClearOS two-factor authentication state'
+    EQUALITY integerMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+    SINGLE-VALUE )
+
+attributetype ( clearTwoFactorAuthEmail
+    NAME 'clearTwoFactorAuthEmail'
+    DESC 'ClearOS two-factor authentication e-mail'
+    EQUALITY caseIgnoreIA5Match
+    SUBSTR caseIgnoreIA5SubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+
+
+# Class
+#--------------------------------------------------------------------------
+
+objectclass ( clearTwoFactorAuthAccount
+    NAME 'clearTwoFactorAuthAccount'
+    SUP top AUXILIARY
+    DESC 'Two factor authentication object'
+    MUST ( uid )
+    MAY ( clearTwoFactorAuthState $ clearTwoFactorAuthEmail ) )
+
+
 
 ###########################################################################
 #
