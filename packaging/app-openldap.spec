@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 2.3.2
+Version: 2.3.20
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -85,6 +85,7 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/openldap/packaging
+%exclude /usr/clearos/apps/openldap/unify.json
 %dir /usr/clearos/apps/openldap
 %dir /etc/openldap/cacerts
 %dir /var/clearos/events/openldap_configuration
