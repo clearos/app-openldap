@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 2.3.23
+Version: 2.4.0
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -20,8 +20,8 @@ Requires: app-certificate-manager-core >= 1:2.3.27
 Requires: app-ldap-core >= 1:1.6.1
 Requires: app-mode-core
 Requires: app-network-core
-Requires: openldap-servers >= 2.4.23-34.v6.2
-Requires: openldap-clients >= 2.4.23-34.v6.2
+Requires: openldap-servers >= 2.4.44
+Requires: openldap-clients >= 2.4.44
 Requires: openssl
 
 %description core

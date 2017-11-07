@@ -42,6 +42,16 @@ if [ ! -s "$CRT" ]; then
     chmod 640 $CRT
 fi
 
+# Fix slapd.d issue
+#------------------
+
+if ( [ -d /etc/openldap/slapd.d ] && [ -e /etc/openldap/slapd.conf.bak ] ); then
+    logger -p local6.notice -t installer "app-openldap-core - fixing slapd.d issue"
+    mv /etc/openldap/slapd.d /var/clearos/openldap/backup
+    cp -a /etc/openldap/slapd.conf.bak /etc/openldap/slapd.conf
+    service slapd restart >/dev/null 2>&1
+fi
+
 # Add OwnCloud schema
 #--------------------
 
