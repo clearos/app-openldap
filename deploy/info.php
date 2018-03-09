@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'openldap';
-$app['version'] = '2.4.0';
+$app['version'] = '2.4.1';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -33,7 +33,7 @@ $app['core_provides'] = array(
 );
 
 $app['core_requires'] = array(
-    'app-certificate-manager-core >= 1:2.3.27',
+    'app-certificate-manager-core >= 1:2.4.20',
     'app-ldap-core >= 1:1.6.1',
     'app-mode-core',
     'app-network-core',

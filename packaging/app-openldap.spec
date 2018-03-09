@@ -1,7 +1,7 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 2.4.0
+Version: 2.4.1
 Release: 1%{dist}
 Summary: OpenLDAP Driver - Core
 License: LGPLv3
@@ -16,7 +16,7 @@ The OpenLDAP Driver app provides the the necessary tools for users, groups, acco
 Summary: OpenLDAP Driver - Core
 Provides: system-ldap-driver
 Requires: app-base-core
-Requires: app-certificate-manager-core >= 1:2.3.27
+Requires: app-certificate-manager-core >= 1:2.4.20
 Requires: app-ldap-core >= 1:1.6.1
 Requires: app-mode-core
 Requires: app-network-core
