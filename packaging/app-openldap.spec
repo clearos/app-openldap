@@ -1,11 +1,13 @@
 
 Name: app-openldap
 Epoch: 1
-Version: 2.4.1
+Version: 2.4.2
 Release: 1%{dist}
-Summary: OpenLDAP Driver - Core
+Summary: OpenLDAP Driver - API
 License: LGPLv3
-Group: ClearOS/Libraries
+Group: Applications/API
+Packager: ClearFoundation
+Vendor: ClearFoundation
 Source: app-openldap-%{version}.tar.gz
 Buildarch: noarch
 
@@ -13,7 +15,7 @@ Buildarch: noarch
 The OpenLDAP Driver app provides the the necessary tools for users, groups, accounts and other directory services.
 
 %package core
-Summary: OpenLDAP Driver - Core
+Summary: OpenLDAP Driver - API
 Provides: system-ldap-driver
 Requires: app-base-core
 Requires: app-certificate-manager-core >= 1:2.4.20
